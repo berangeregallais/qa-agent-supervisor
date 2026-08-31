@@ -74,6 +74,23 @@
   #results > section { margin-top: 52px; }
   #results > section:first-child { margin-top: 0; }
 
+  .history-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .history-count { font-size: 12px; color: var(--text-muted); }
+  .history-empty { color: var(--text-muted); font-size: 13px; padding: 4px 0; }
+
+  .history-row {
+    display: grid; grid-template-columns: 120px 40px 1fr auto; align-items: center;
+    gap: 14px; padding: 9px 4px; font-size: 13px;
+  }
+  .history-row + .history-row { border-top: 1px solid var(--border); }
+  .history-when { color: var(--text-muted); font-size: 12px; white-space: nowrap; }
+  .history-bar-track {
+    display: flex; height: 8px; width: 100%; border-radius: 999px; overflow: hidden;
+    background: var(--surface-2); border: 1px solid var(--border);
+  }
+  .history-resume { color: var(--text-secondary); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .history-rate { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
   .test-list { display: flex; flex-direction: column; gap: 2px; max-height: 320px; overflow-y: auto; margin-top: 12px; }
   .test-row { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 8px; font-size: 13.5px; }
   .test-row:hover { background: var(--surface-2); }
@@ -147,9 +164,9 @@
 
   .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
   .filter-group { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; padding: 3px; background: var(--surface); gap: 2px; }
-  .filter-chip { border: none; background: transparent; color: var(--text-secondary); font: inherit; font-size: 13px; font-weight: 500; padding: 7px 14px; border-radius: 999px; cursor: pointer; }
-  .filter-chip:hover { color: var(--text-primary); }
-  .filter-chip.active { background: var(--accent); color: var(--accent-ink); }
+  .filter-chip, .level-chip { border: none; background: transparent; color: var(--text-secondary); font: inherit; font-size: 13px; font-weight: 500; padding: 7px 14px; border-radius: 999px; cursor: pointer; }
+  .filter-chip:hover, .level-chip:hover { color: var(--text-primary); }
+  .filter-chip.active, .level-chip.active { background: var(--accent); color: var(--accent-ink); }
   .export-btn { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-primary); font: inherit; font-size: 13px; font-weight: 500; padding: 8px 14px; border-radius: 10px; cursor: pointer; box-shadow: var(--shadow); }
   .export-btn:hover { border-color: var(--accent); color: var(--accent); }
 
@@ -186,6 +203,16 @@
       <div class="masthead-sub">Pipeline multi-agent (Analyste → Exécuteur → Triage → Rapporteur)</div>
     </div>
   </header>
+
+  <section class="panel">
+    <div class="history-head">
+      <h2 style="margin: 0;">Historique des runs</h2>
+      <span class="history-count" id="history-count"></span>
+    </div>
+    <div id="history-content">
+      <div class="history-empty">Chargement…</div>
+    </div>
+  </section>
 
   <section class="panel">
     <h2>1. Choisir les tests</h2>
@@ -240,7 +267,13 @@
     </section>
 
     <section>
-      <h2>Synthèse</h2>
+      <div class="toolbar">
+        <h2 style="margin: 0;">Synthèse</h2>
+        <div class="filter-group" role="group" aria-label="Niveau de synthèse">
+          <button class="level-chip active" data-level="dev">Vue développeur</button>
+          <button class="level-chip" data-level="direction">Vue direction</button>
+        </div>
+      </div>
       <div class="panel resume-card" id="resume-text"></div>
     </section>
 
@@ -299,6 +332,7 @@
   let allTests = [];
   let currentReport = null;
   let currentFilter = "tous";
+  let currentLevel = "dev";
   let activeRunId = null;
   let pollTimer = null;
   let lastRunTimestamp = null;
@@ -333,6 +367,54 @@
   }
 
   setInterval(renderLastRun, 30000); // rafraîchit le texte relatif même sans nouveau run
+
+  // ---------- Historique des runs ----------
+
+  const historyContentEl = document.getElementById("history-content");
+  const historyCountEl = document.getElementById("history-count");
+
+  function formatHistoryWhen(isoTimestamp) {
+    const date = new Date(isoTimestamp);
+    return date.toLocaleString("fr-FR", {
+      day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
+    });
+  }
+
+  function renderHistory(entries) {
+    if (!entries.length) {
+      historyContentEl.innerHTML = '<div class="history-empty">Aucun run pour l\'instant — lance la première campagne ci-dessous.</div>';
+      historyCountEl.textContent = "";
+      return;
+    }
+
+    historyCountEl.textContent = `${entries.length} run${entries.length > 1 ? "s" : ""}`;
+
+    historyContentEl.innerHTML = entries.map(entry => {
+      const rate = entry.total > 0 ? Math.round((entry.reussis / entry.total) * 100) : 0;
+      return `
+        <div class="history-row">
+          <span class="history-when">${formatHistoryWhen(entry.timestamp)}</span>
+          <span class="history-rate">${rate}%</span>
+          <div>
+            <div class="history-bar-track">
+              <div class="bar-good" style="width: ${rate}%"></div>
+              <div class="bar-critical" style="width: ${100 - rate}%"></div>
+            </div>
+          </div>
+          <span class="history-resume" title="${entry.resume}">${entry.resume}</span>
+        </div>
+      `;
+    }).join("");
+  }
+
+  async function loadHistory() {
+    try {
+      const res = await fetch("/api/history");
+      renderHistory(await res.json());
+    } catch {
+      historyContentEl.innerHTML = '<div class="history-empty">Historique indisponible.</div>';
+    }
+  }
 
   // ---------- Estimation de coût ----------
   // Ordre de grandeur, pas une facture : le Superviseur fait un appel avant
@@ -427,6 +509,7 @@
       currentReport = data.report;
       renderReport(currentReport);
       loadLastRun();
+      loadHistory();
     } else if (data.status === "cancelled") {
       errorBox.style.display = "block";
       errorBox.style.background = "var(--surface-2)";
@@ -492,7 +575,8 @@
     document.getElementById("stat-total").textContent = report.total;
     document.getElementById("stat-good").textContent = report.reussis;
     document.getElementById("stat-critical").textContent = report.echoues;
-    document.getElementById("resume-text").textContent = report.resume;
+    currentLevel = "dev";
+    renderResumeLevel();
 
     document.getElementById("tc-rows").innerHTML = report.details.map(d => {
       const statusKey = d.statut === "réussi" ? "reussi" : "echoue";
@@ -536,6 +620,20 @@
     });
   }
 
+  function renderResumeLevel() {
+    if (!currentReport) return;
+    document.getElementById("resume-text").textContent =
+      currentLevel === "direction" ? currentReport.resume_direction : currentReport.resume;
+  }
+
+  document.querySelectorAll(".level-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      currentLevel = chip.dataset.level;
+      document.querySelectorAll(".level-chip").forEach(c => c.classList.toggle("active", c === chip));
+      renderResumeLevel();
+    });
+  });
+
   function visibleDetails() {
     if (!currentReport) return [];
     return currentReport.details.filter(d => {
@@ -576,6 +674,7 @@
 
   loadTests();
   loadLastRun();
+  loadHistory();
   updateCostEstimate();
 </script>
 </body>

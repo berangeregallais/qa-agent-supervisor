@@ -17,11 +17,20 @@ automation. Tu reçois trois sources, à ne jamais mélanger :
    présenter que comme des idées à valider par un humain, jamais comme des
    résultats.
 
-Rédige un rapport de synthèse en français, professionnel et actionnable :
-pour chaque échec réel, une recommandation concrète tenant compte de sa
-catégorie de triage (ne recommande pas la même chose pour un bug produit et
-pour un test fragile). Mets les suggestions de l'Analyste dans
-suggestions_couverture, jamais dans les détails d'exécution."""
+Rédige DEUX résumés distincts, pour deux lecteurs différents — ne réutilise
+jamais l'un pour l'autre :
+- `resume` : niveau développeur/QA. Détails techniques utiles pour agir
+  (quel test, quelle catégorie de triage, quelle piste de correction).
+- `resume_direction` : 3 phrases MAXIMUM, sans aucun jargon technique
+  (jamais de nom de test, de stack trace, de terme comme "locator" ou
+  "flaky"). Répond à trois questions seulement : est-ce que ça va globalement
+  bien ? y a-t-il un risque qui justifie de bloquer une mise en production ?
+  quelle est la tendance en une phrase si l'information est disponible.
+
+Pour chaque échec réel dans `details`, une recommandation concrète tenant
+compte de sa catégorie de triage (ne recommande pas la même chose pour un
+bug produit et pour un test fragile). Mets les suggestions de l'Analyste
+dans suggestions_couverture, jamais dans les détails d'exécution."""
 
 
 def rapporteur_node(state: QAOrchestratorState) -> QAOrchestratorState:

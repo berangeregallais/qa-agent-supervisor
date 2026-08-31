@@ -46,10 +46,21 @@ class TestExecutionResult:
 class TestReport:
     def test_suggestions_couverture_defaults_to_empty_list(self):
         report = Report(
-            resume="ok", total=1, reussis=1, echoues=0, details=[], recommandations=[]
+            resume="ok", resume_direction="ok", total=1, reussis=1, echoues=0,
+            details=[], recommandations=[],
         )
         assert report.suggestions_couverture == []
 
-    def test_missing_required_field_is_rejected(self):
+    def test_missing_resume_is_rejected(self):
         with pytest.raises(ValidationError):
-            Report(total=1, reussis=1, echoues=0, details=[], recommandations=[])  # resume manquant
+            Report(
+                resume_direction="ok", total=1, reussis=1, echoues=0,
+                details=[], recommandations=[],
+            )  # resume manquant
+
+    def test_missing_resume_direction_is_rejected(self):
+        with pytest.raises(ValidationError):
+            Report(
+                resume="ok", total=1, reussis=1, echoues=0,
+                details=[], recommandations=[],
+            )  # resume_direction manquant, oubli fréquent vu que resume existe déjà

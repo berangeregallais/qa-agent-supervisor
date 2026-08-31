@@ -12,9 +12,18 @@ class ReportEntry(BaseModel):
 
 
 class Report(BaseModel):
-    """Le rapport final, produit par l'Agent Rapporteur."""
+    """Le rapport final, produit par l'Agent Rapporteur.
+
+    Deux résumés distincts, pour deux lecteurs différents — jamais un seul
+    texte qui essaie de servir les deux à la fois :
+    - `resume` : niveau développeur/QA, détails techniques utiles pour agir.
+    - `resume_direction` : 3 lignes maximum, orienté statut/risque/décision,
+      sans jargon technique — ce qu'on montrerait à quelqu'un qui doit
+      décider si on met en production, pas comment corriger un test.
+    """
 
     resume: str
+    resume_direction: str
     total: int
     reussis: int
     echoues: int

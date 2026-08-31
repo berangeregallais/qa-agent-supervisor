@@ -15,23 +15,62 @@ from schemas.report import Report
 
 REPORTS_DIR = Path(__file__).resolve().parent.parent / "reports"
 LAST_RUN_PATH = REPORTS_DIR / "last-run.json"
+HISTORY_PATH = REPORTS_DIR / "history.json"
+
+# Fichiers que _reset_reports_dir ne doit JAMAIS supprimer — ils doivent
+# survivre à travers les runs, y compris un run annulé ou en erreur.
+_PERSISTENT_FILENAMES = {LAST_RUN_PATH.name, HISTORY_PATH.name}
+
+MAX_HISTORY_ENTRIES = 50
 
 
 def _reset_reports_dir() -> None:
-    # Chaque run repart d'un rapport JUnit propre : celui d'un run précédent
-    # ne doit jamais se mélanger avec celui du run courant. On préserve
-    # last-run.json au travers du reset (voir _record_last_run).
-    if REPORTS_DIR.exists():
-        shutil.rmtree(REPORTS_DIR)
+    # Nettoie les artefacts du run précédent (JUnit XML, compteur de
+    # reruns...) sans jamais toucher last-run.json ni history.json : sinon
+    # un run annulé (qui ne va jamais jusqu'à _record_completed_run)
+    # effacerait la mémoire de tous les runs précédents sans jamais la
+    # reconstruire. Bug réel trouvé en construisant l'historique.
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    for item in REPORTS_DIR.iterdir():
+        if item.name in _PERSISTENT_FILENAMES:
+            continue
+        if item.is_dir():
+            shutil.rmtree(item)
+        else:
+            item.unlink()
 
 
-def _record_last_run() -> None:
-    LAST_RUN_PATH.parent.mkdir(parents=True, exist_ok=True)
-    LAST_RUN_PATH.write_text(
-        json.dumps({"timestamp": datetime.now(timezone.utc).isoformat()}),
-        encoding="utf-8",
+def _load_history() -> list[dict]:
+    if not HISTORY_PATH.exists():
+        return []
+    return json.loads(HISTORY_PATH.read_text(encoding="utf-8"))
+
+
+def get_history() -> list[dict]:
+    """Renvoie les runs passés, du plus récent au plus ancien."""
+    return list(reversed(_load_history()))
+
+
+def _record_completed_run(report: Report) -> None:
+    """Enregistre le run à la fois comme "dernier run" et dans l'historique
+    — un seul point d'appel pour ne jamais faire l'un sans l'autre."""
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now(timezone.utc).isoformat()
+
+    LAST_RUN_PATH.write_text(json.dumps({"timestamp": timestamp}), encoding="utf-8")
+
+    entries = _load_history()
+    entries.append(
+        {
+            "timestamp": timestamp,
+            "total": report.total,
+            "reussis": report.reussis,
+            "echoues": report.echoues,
+            "resume": report.resume[:200],
+        }
     )
+    entries = entries[-MAX_HISTORY_ENTRIES:]  # évite une croissance illimitée
+    HISTORY_PATH.write_text(json.dumps(entries, indent=2), encoding="utf-8")
 
 
 def get_last_run_timestamp() -> Optional[str]:
@@ -64,11 +103,11 @@ def run_pipeline(specification: str = "", selected_tests: Optional[list[str]] = 
     final_state = graph.invoke(
         _initial_state(specification, selected_tests), config={"recursion_limit": 25}
     )
-    _record_last_run()
 
     if final_state["report"] is None:
         raise RuntimeError("Le pipeline s'est arrêté sans produire de rapport.")
 
+    _record_completed_run(final_state["report"])
     return final_state["report"]
 
 
@@ -101,5 +140,7 @@ def run_pipeline_cancelable(
         if cancel_event.is_set():
             return None
 
-    _record_last_run()
-    return accumulated_state.get("report")
+    report = accumulated_state.get("report")
+    if report is not None:
+        _record_completed_run(report)
+    return report

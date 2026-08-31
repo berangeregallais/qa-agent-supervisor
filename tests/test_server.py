@@ -11,7 +11,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 import server
-from schemas.report import Report
 
 
 @pytest.fixture
@@ -59,11 +58,24 @@ class TestGetLastRun:
         assert res.json() == {"timestamp": None}
 
 
+class TestGetHistory:
+    def test_returns_the_stored_history(self, client):
+        fake_history = [{"timestamp": "t2", "total": 5, "reussis": 5, "echoues": 0, "resume": "ok"}]
+        with patch.object(server, "get_history", return_value=fake_history):
+            res = client.get("/api/history")
+
+        assert res.json() == fake_history
+
+    def test_returns_empty_list_before_any_run(self, client):
+        with patch.object(server, "get_history", return_value=[]):
+            res = client.get("/api/history")
+
+        assert res.json() == []
+
+
 class TestRunLifecycle:
-    def test_successful_run_transitions_to_done_with_report(self, client):
-        fake_report = Report(
-            resume="tout va bien", total=1, reussis=1, echoues=0, details=[], recommandations=[]
-        )
+    def test_successful_run_transitions_to_done_with_report(self, client, report_factory):
+        fake_report = report_factory(resume="tout va bien")
         with patch.object(server, "run_pipeline_cancelable", return_value=fake_report):
             run_id = client.post("/api/run", json={"specification": "", "selected_tests": None}).json()["run_id"]
             final = _wait_until_done(client, run_id)
@@ -94,12 +106,12 @@ class TestRunLifecycle:
         res = client.get("/api/run/inexistant")
         assert res.status_code == 404
 
-    def test_run_starts_immediately_without_waiting_for_completion(self, client):
+    def test_run_starts_immediately_without_waiting_for_completion(self, client, report_factory):
         # Le POST ne doit jamais bloquer jusqu'à la fin du pipeline — c'est
         # ce qui permet à /cancel de rester réactif pendant un run long.
         def slow_pipeline(*args, **kwargs):
             time.sleep(1.0)
-            return Report(resume="", total=0, reussis=0, echoues=0, details=[], recommandations=[])
+            return report_factory()
 
         with patch.object(server, "run_pipeline_cancelable", side_effect=slow_pipeline):
             start = time.monotonic()

@@ -26,7 +26,7 @@ from pydantic import BaseModel
 load_dotenv()  # doit s'exécuter avant tout import qui construit un client Anthropic
 
 from agents.executeur import cancel_current_execution, list_available_tests  # noqa: E402
-from orchestrator.runner import get_last_run_timestamp, run_pipeline_cancelable  # noqa: E402
+from orchestrator.runner import get_history, get_last_run_timestamp, run_pipeline_cancelable  # noqa: E402
 
 WEB_DIR = Path(__file__).resolve().parent / "web"
 
@@ -79,6 +79,11 @@ def get_tests() -> list[str]:
 @app.get("/api/last-run")
 def get_last_run() -> dict:
     return {"timestamp": get_last_run_timestamp()}
+
+
+@app.get("/api/history")
+def get_run_history() -> list[dict]:
+    return get_history()
 
 
 @app.post("/api/run")

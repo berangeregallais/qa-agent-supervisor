@@ -3,6 +3,7 @@
 import pytest
 
 from schemas.execution_result import ExecutionResult
+from schemas.report import Report
 
 
 @pytest.fixture
@@ -70,5 +71,27 @@ def execution_result_factory():
         )
         defaults.update(overrides)
         return ExecutionResult(**defaults)
+
+    return _make
+
+
+@pytest.fixture
+def report_factory():
+    """Construit un Report minimal valide, pour les tests qui n'ont besoin
+    que de vérifier ce qui est FAIT du rapport (persistance, API), pas son
+    contenu détaillé."""
+
+    def _make(**overrides) -> Report:
+        defaults = dict(
+            resume="Résumé de test",
+            resume_direction="Tout va bien.",
+            total=1,
+            reussis=1,
+            echoues=0,
+            details=[],
+            recommandations=[],
+        )
+        defaults.update(overrides)
+        return Report(**defaults)
 
     return _make

@@ -1,0 +1,23 @@
+name: Tests des agents
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      # Aucun secret requis : tous les appels Claude et sous-processus
+      # pytest sont mockés dans la suite (voir tests/), rien de réel n'est
+      # jamais appelé ici.
+      - run: pip install -r requirements.txt
+
+      - run: pytest -v
