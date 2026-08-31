@@ -67,14 +67,60 @@ Chaque lancement fait de vrais appels à l'API Claude (Opus 5) — pas de mode
 gratuit. L'interface affiche une estimation avant de lancer, mais c'est un
 ordre de grandeur, pas une facture exacte.
 
+## Tests (des agents eux-mêmes, pas de maisoncarmenta.com)
+
+```powershell
+.venv\Scripts\python.exe -m pytest -v
+```
+
+61 tests, aucun appel Claude réel ni sous-processus pytest réel — tout ce
+qui touche l'API Anthropic ou un vrai `pytest` est mocké (`unittest.mock`).
+Ce qui est couvert :
+
+- **Logique pure** : parsing JUnit XML, lecture du compteur de reruns,
+  construction de l'état initial, persistance du "dernier run".
+- **Décision déterministe du Triage** : un test récupéré après rerun est
+  catégorisé "flaky" par preuve directe, sans jamais appeler Claude — testé
+  en vérifiant qu'aucun mock d'API n'est nécessaire pour ce cas précis.
+- **Câblage des agents qui appellent Claude** (Analyste, Superviseur,
+  Triage sur échec persistant, Rapporteur) : le client Anthropic est mocké,
+  on vérifie que la décision/sortie simulée est correctement intégrée dans
+  le state — pas la qualité de la décision elle-même (voir "Pistes
+  d'évolution").
+- **L'API FastAPI** via `TestClient` : cycle de vie complet d'un run
+  (running → done/error/cancelled), 404 sur un run inconnu, réactivité de
+  l'annulation pendant qu'un run "long" est simulé en cours.
+
 ## Structure
 
 ```text
 agents/         un fichier par agent (analyste, executeur, triage, rapporteur)
 orchestrator/   state.py (contrat de données), supervisor.py, graph.py, runner.py
 schemas/        modèles Pydantic partagés entre agents
+tests/          tests des agents eux-mêmes (voir "Tests" ci-dessus)
 web/            interface (servie par server.py)
 server.py       API FastAPI + sert l'interface
 main.py         point d'entrée CLI
 reports/        généré à chaque run (JUnit XML, historique) — jamais committé
 ```
+
+## Pistes d'évolution
+
+- **Évaluation LangSmith** — la suite pytest ci-dessus vérifie que les
+  agents sont bien *câblés* (le state circule correctement), mais pas que
+  leurs décisions LLM sont *bonnes* (le Superviseur route-t-il
+  correctement dans un cas ambigu ? les suggestions de l'Analyste sont-
+  elles pertinentes ?). `langsmith.evaluate()` est fait pour ça : faire
+  tourner un agent sur un jeu d'exemples et noter la qualité des réponses,
+  avec suivi dans le temps. Nécessite un compte LangSmith séparé et un
+  vrai jeu d'exemples de référence — volontairement pas fait aujourd'hui
+  pour ne pas bâcler ni le jeu d'exemples ni la suite pytest existante.
+- **Historique des runs** (SQLite ou JSON horodaté par run) pour calculer
+  un vrai taux de flakiness dans le temps, pas seulement sur un run isolé.
+- **Rapporteur multi-niveaux** : un résumé différent selon le lecteur (dev
+  vs décideur).
+- **Agent Validateur** (vérifier qu'une assertion peut réellement échouer)
+  et **Agent Data** (V2, cycle de vie des données de test) — évoqués dans
+  l'architecture mais jamais implémentés.
+- CI GitHub Actions, notifications Slack/email sur détection d'un vrai
+  `bug_produit`, coût cumulé suivi dans le temps.
