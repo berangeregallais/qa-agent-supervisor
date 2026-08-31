@@ -1,0 +1,4 @@
+langgraph==1.2.11
+anthropic==1.0.0
+pydantic==2.13.4
+pytest-playwright==0.9.0

@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QA Maison Carmenta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f6f4;
+    --surface: #ffffff;
+    --surface-2: #eef1ee;
+    --border: #dce2dd;
+    --text-primary: #17211d;
+    --text-secondary: #4c5a54;
+    --text-muted: #7c8b84;
+    --accent: #0f6b66;
+    --accent-ink: #ffffff;
+    --accent-soft: #e2f0ee;
+    --accent-soft-border: #bfdbd7;
+    --status-good: #1e8e5a;
+    --status-good-bg: #e5f5ec;
+    --status-good-border: #bfe4cd;
+    --status-critical: #c4432e;
+    --status-critical-bg: #fbeae6;
+    --status-critical-border: #f0c7bc;
+    --shadow: 0 1px 2px rgba(23, 33, 29, 0.04), 0 8px 24px -12px rgba(23, 33, 29, 0.14);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10171a; --surface: #182225; --surface-2: #1d292b; --border: #2b3a3c;
+      --text-primary: #eaf1ee; --text-secondary: #a9bab4; --text-muted: #7c8f89;
+      --accent: #57cabf; --accent-ink: #08211e; --accent-soft: #1c3532; --accent-soft-border: #2c4d48;
+      --status-good: #4fc189; --status-good-bg: #1a3327; --status-good-border: #2c5540;
+      --status-critical: #e8836f; --status-critical-bg: #3a231f; --status-critical-border: #5c3a32;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10171a; --surface: #182225; --surface-2: #1d292b; --border: #2b3a3c;
+    --text-primary: #eaf1ee; --text-secondary: #a9bab4; --text-muted: #7c8f89;
+    --accent: #57cabf; --accent-ink: #08211e; --accent-soft: #1c3532; --accent-soft-border: #2c4d48;
+    --status-good: #4fc189; --status-good-bg: #1a3327; --status-good-border: #2c5540;
+    --status-critical: #e8836f; --status-critical-bg: #3a231f; --status-critical-border: #5c3a32;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text-primary);
+    font-family: "IBM Plex Sans", system-ui, sans-serif; font-size: 15px; line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); }
+  .page { max-width: 980px; margin: 0 auto; padding: 48px 24px 96px; }
+
+  .masthead {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-wrap: wrap;
+    border-bottom: 1px solid var(--border); padding-bottom: 28px; margin-bottom: 32px;
+  }
+  .masthead-title { font-family: "Archivo", system-ui, sans-serif; font-size: 30px; font-weight: 800; letter-spacing: -0.01em; text-transform: uppercase; text-wrap: balance; margin: 0 0 6px; }
+  .masthead-sub { color: var(--text-secondary); font-size: 14px; }
+
+  h2 { font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 15px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-secondary); margin: 0 0 14px; text-wrap: balance; }
+
+  .panel {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: var(--shadow); padding: 22px 24px; margin-bottom: 20px;
+  }
+
+  #results > section { margin-top: 52px; }
+  #results > section:first-child { margin-top: 0; }
+
+  .test-list { display: flex; flex-direction: column; gap: 2px; max-height: 320px; overflow-y: auto; margin-top: 12px; }
+  .test-row { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 8px; font-size: 13.5px; }
+  .test-row:hover { background: var(--surface-2); }
+  .test-row input { accent-color: var(--accent); width: 15px; height: 15px; flex-shrink: 0; }
+  .test-row .file { color: var(--text-muted); font-family: "IBM Plex Mono", monospace; font-size: 11.5px; }
+  .test-row .name { font-family: "IBM Plex Mono", monospace; }
+
+  .master-row { display: flex; align-items: center; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--border); font-weight: 500; }
+  .master-row input { accent-color: var(--accent); width: 16px; height: 16px; }
+
+  textarea {
+    width: 100%; min-height: 84px; resize: vertical; font: inherit; font-size: 13.8px;
+    padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text-primary);
+  }
+  textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .field-note { font-size: 12.5px; color: var(--text-muted); margin-top: 6px; }
+
+  .run-btn {
+    display: inline-flex; align-items: center; gap: 8px; border: none; background: var(--accent);
+    color: var(--accent-ink); font: inherit; font-size: 14px; font-weight: 600; padding: 12px 22px;
+    border-radius: 10px; cursor: pointer; margin-top: 18px;
+  }
+  .run-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+  .run-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .run-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .stop-btn {
+    display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--status-critical-border);
+    background: var(--status-critical-bg); color: var(--status-critical); font: inherit; font-size: 14px;
+    font-weight: 600; padding: 12px 20px; border-radius: 10px; cursor: pointer; margin-top: 18px; margin-left: 10px;
+  }
+  .stop-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+  .run-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-size: 12px; color: var(--text-muted); }
+  .cost-estimate { font-family: "IBM Plex Mono", monospace; }
+  .last-run { }
+
+  .status-line { display: flex; align-items: center; gap: 10px; margin-top: 14px; font-size: 13.5px; color: var(--text-secondary); }
+  .spinner {
+    width: 15px; height: 15px; border-radius: 50%; border: 2px solid var(--border);
+    border-top-color: var(--accent); animation: spin 0.8s linear infinite; flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+
+  .error-box {
+    background: var(--status-critical-bg); border: 1px solid var(--status-critical-border);
+    color: var(--status-critical); border-radius: 10px; padding: 14px 16px; font-size: 13.5px; margin-top: 14px;
+  }
+
+  #results { display: none; }
+
+  .hero { display: grid; grid-template-columns: 1.1fr 1.4fr; gap: 20px; margin-bottom: 20px; }
+  @media (max-width: 720px) { .hero { grid-template-columns: 1fr; } }
+  .hero-rate { display: flex; flex-direction: column; justify-content: center; gap: 14px; }
+  .rate-number { font-family: "IBM Plex Mono", monospace; font-size: 52px; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums; color: var(--accent); }
+  .rate-label { font-size: 12.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .bar-track { display: flex; height: 10px; width: 100%; border-radius: 999px; overflow: hidden; background: var(--surface-2); border: 1px solid var(--border); }
+  .bar-good { background: var(--status-good); } .bar-critical { background: var(--status-critical); }
+  .bar-legend { display: flex; gap: 18px; font-size: 12.5px; color: var(--text-secondary); }
+  .bar-legend .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .stat-tile { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); padding: 18px; display: flex; flex-direction: column; gap: 5px; justify-content: center; }
+  .stat-tile .value { font-family: "IBM Plex Mono", monospace; font-size: 26px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .stat-tile.good .value { color: var(--status-good); }
+  .stat-tile.critical .value { color: var(--status-critical); }
+  .stat-tile .label { font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .resume-card { border-left: 3px solid var(--accent); color: var(--text-secondary); font-size: 14px; line-height: 1.7; }
+
+  .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .filter-group { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; padding: 3px; background: var(--surface); gap: 2px; }
+  .filter-chip { border: none; background: transparent; color: var(--text-secondary); font: inherit; font-size: 13px; font-weight: 500; padding: 7px 14px; border-radius: 999px; cursor: pointer; }
+  .filter-chip:hover { color: var(--text-primary); }
+  .filter-chip.active { background: var(--accent); color: var(--accent-ink); }
+  .export-btn { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-primary); font: inherit; font-size: 13px; font-weight: 500; padding: 8px 14px; border-radius: 10px; cursor: pointer; box-shadow: var(--shadow); }
+  .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); font-size: 13.5px; }
+  thead th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); background: var(--surface-2); padding: 11px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  tbody tr + tr td { border-top: 1px solid var(--border); }
+  tbody td { padding: 12px 14px; vertical-align: top; }
+  .tc-title-cell { display: flex; flex-direction: column; gap: 3px; min-width: 180px; }
+  .tc-title { font-weight: 500; }
+  .tc-id { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--text-muted); word-break: break-all; }
+  .tc-comment { color: var(--text-secondary); max-width: 36ch; font-size: 12.8px; }
+  .category-tag {
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--text-secondary);
+    background: var(--surface-2); border: 1px solid var(--border); padding: 3px 8px;
+    border-radius: 6px; white-space: nowrap;
+  }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; white-space: nowrap; border: 1px solid transparent; }
+  .pill.good { color: var(--status-good); background: var(--status-good-bg); border-color: var(--status-good-border); }
+  .pill.critical { color: var(--status-critical); background: var(--status-critical-bg); border-color: var(--status-critical-border); }
+
+  .reco-list { display: flex; flex-direction: column; gap: 8px; }
+  .reco-item { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); padding: 14px 18px; font-size: 13px; color: var(--text-secondary); }
+
+  .suggestion-item { background: var(--accent-soft); border: 1px solid var(--accent-soft-border); border-radius: 12px; padding: 12px 16px; font-size: 12.8px; color: var(--text-secondary); margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <div>
+      <h1 class="masthead-title">QA Maison Carmenta</h1>
+      <div class="masthead-sub">Pipeline multi-agent (Analyste → Exécuteur → Triage → Rapporteur)</div>
+    </div>
+  </header>
+
+  <section class="panel">
+    <h2>1. Choisir les tests</h2>
+    <div class="master-row">
+      <input type="checkbox" id="select-all" checked>
+      <label for="select-all">Tous les tests</label>
+    </div>
+    <div class="test-list" id="test-list">
+      <div style="color: var(--text-muted); font-size: 13px; padding: 8px;">Chargement de la liste des tests…</div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>2. Idées de test supplémentaires (optionnel)</h2>
+    <textarea id="specification" placeholder="Décris un scénario ou une user story si tu veux que l'agent suggère des pistes de couverture non encore testées. Laisse vide pour ignorer cette étape."></textarea>
+    <div class="field-note">Ces suggestions ne sont jamais exécutées automatiquement — juste des idées à valider.</div>
+  </section>
+
+  <div class="run-bar">
+    <div>
+      <button class="run-btn" id="run-btn">Lancer la campagne</button>
+      <button class="stop-btn" id="stop-btn" style="display: none;">Arrêter</button>
+    </div>
+    <div class="run-meta">
+      <div id="cost-estimate" class="cost-estimate"></div>
+      <div id="last-run" class="last-run"></div>
+    </div>
+  </div>
+  <div class="status-line" id="status-line" style="display: none;"></div>
+  <div class="error-box" id="error-box" style="display: none;"></div>
+
+  <div id="results">
+    <section>
+      <div class="hero">
+        <div class="hero-rate">
+          <div>
+            <div class="rate-number" id="rate-number">–</div>
+            <div class="rate-label">Taux de réussite</div>
+          </div>
+          <div class="bar-track"><div class="bar-good" id="bar-good"></div><div class="bar-critical" id="bar-critical"></div></div>
+          <div class="bar-legend">
+            <span><span class="dot" style="background: var(--status-good)"></span>Réussis</span>
+            <span><span class="dot" style="background: var(--status-critical)"></span>Échoués</span>
+          </div>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-tile"><div class="value" id="stat-total">–</div><div class="label">Exécutés</div></div>
+          <div class="stat-tile good"><div class="value" id="stat-good">–</div><div class="label">Réussis</div></div>
+          <div class="stat-tile critical"><div class="value" id="stat-critical">–</div><div class="label">Échoués</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Synthèse</h2>
+      <div class="panel resume-card" id="resume-text"></div>
+    </section>
+
+    <section>
+      <div class="toolbar">
+        <h2 style="margin: 0;">Détail</h2>
+        <div class="filter-group" role="group" aria-label="Filtrer par statut">
+          <button class="filter-chip active" data-filter="tous">Tous</button>
+          <button class="filter-chip" data-filter="reussi">Réussis</button>
+          <button class="filter-chip" data-filter="echoue">Échoués</button>
+        </div>
+      </div>
+      <div class="toolbar">
+        <span></span>
+        <div>
+          <button class="export-btn" id="export-csv">Exporter CSV</button>
+          <button class="export-btn" id="export-json">Exporter JSON</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Test</th><th>Statut</th><th>Catégorie</th><th>Commentaire</th></tr></thead>
+          <tbody id="tc-rows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="suggestions-section" style="display: none;">
+      <h2>Suggestions de couverture (non vérifiées)</h2>
+      <div id="suggestions-list"></div>
+    </section>
+
+    <section>
+      <h2>Recommandations</h2>
+      <div class="reco-list" id="reco-list"></div>
+    </section>
+  </div>
+
+</div>
+
+<script>
+  const CHECK = '<svg viewBox="0 0 16 16" fill="none" width="12" height="12"><path d="M3 8.5l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const CROSS = '<svg viewBox="0 0 16 16" fill="none" width="12" height="12"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+  const testListEl = document.getElementById("test-list");
+  const selectAllEl = document.getElementById("select-all");
+  const runBtn = document.getElementById("run-btn");
+  const stopBtn = document.getElementById("stop-btn");
+  const statusLine = document.getElementById("status-line");
+  const errorBox = document.getElementById("error-box");
+  const resultsEl = document.getElementById("results");
+  const costEstimateEl = document.getElementById("cost-estimate");
+  const lastRunEl = document.getElementById("last-run");
+  const specificationEl = document.getElementById("specification");
+
+  let allTests = [];
+  let currentReport = null;
+  let currentFilter = "tous";
+  let activeRunId = null;
+  let pollTimer = null;
+  let lastRunTimestamp = null;
+
+  // ---------- Dernier run ----------
+
+  function formatRelative(isoTimestamp) {
+    const diffMs = Date.now() - new Date(isoTimestamp).getTime();
+    const minutes = Math.floor(diffMs / 60000);
+    if (minutes < 1) return "à l'instant";
+    if (minutes === 1) return "il y a 1 minute";
+    if (minutes < 60) return `il y a ${minutes} minutes`;
+    const hours = Math.floor(minutes / 60);
+    return hours === 1 ? "il y a 1 heure" : `il y a ${hours} heures`;
+  }
+
+  function renderLastRun() {
+    lastRunEl.textContent = lastRunTimestamp
+      ? `Dernier run : ${formatRelative(lastRunTimestamp)}`
+      : "Aucun run pour l'instant";
+  }
+
+  async function loadLastRun() {
+    try {
+      const res = await fetch("/api/last-run");
+      const data = await res.json();
+      lastRunTimestamp = data.timestamp;
+    } catch {
+      lastRunTimestamp = null;
+    }
+    renderLastRun();
+  }
+
+  setInterval(renderLastRun, 30000); // rafraîchit le texte relatif même sans nouveau run
+
+  // ---------- Estimation de coût ----------
+  // Ordre de grandeur, pas une facture : le Superviseur fait un appel avant
+  // chaque étape (~4 dans le cas simple), + 1 si des suggestions sont
+  // demandées (Analyste), + jusqu'à 1-2 de plus si le Triage a du travail
+  // (imprévisible avant le run, d'où la fourchette).
+
+  function updateCostEstimate() {
+    const hasSpec = specificationEl.value.trim().length > 0;
+    let callsMin = 4; // superviseur x3 + rapporteur x1
+    let callsMax = 4;
+    if (hasSpec) { callsMin += 2; callsMax += 2; } // analyste + 1 superviseur
+    callsMax += 2; // triage + 1 superviseur, si des tests échouent
+
+    const costMin = (callsMin * 0.01).toFixed(2);
+    const costMax = (callsMax * 0.03).toFixed(2);
+    costEstimateEl.textContent = `≈ ${callsMin}-${callsMax} appels Claude · ~$${costMin}-${costMax} (ordre de grandeur)`;
+  }
+
+  specificationEl.addEventListener("input", updateCostEstimate);
+
+  async function loadTests() {
+    try {
+      const res = await fetch("/api/tests");
+      if (!res.ok) throw new Error(await res.text());
+      allTests = await res.json();
+    } catch (err) {
+      testListEl.innerHTML = `<div style="color: var(--status-critical); font-size: 13px; padding: 8px;">Impossible de charger la liste des tests : ${err.message}</div>`;
+      return;
+    }
+
+    testListEl.innerHTML = allTests.map((id, i) => {
+      const [file, name] = id.split("::");
+      return `
+        <label class="test-row">
+          <input type="checkbox" class="test-checkbox" value="${id}" checked>
+          <span class="name">${name}</span>
+          <span class="file">${file}</span>
+        </label>
+      `;
+    }).join("");
+
+    document.querySelectorAll(".test-checkbox").forEach(cb => {
+      cb.addEventListener("change", () => {
+        const all = document.querySelectorAll(".test-checkbox");
+        const checked = document.querySelectorAll(".test-checkbox:checked");
+        selectAllEl.checked = all.length === checked.length;
+        selectAllEl.indeterminate = checked.length > 0 && checked.length < all.length;
+      });
+    });
+  }
+
+  selectAllEl.addEventListener("change", () => {
+    document.querySelectorAll(".test-checkbox").forEach(cb => { cb.checked = selectAllEl.checked; });
+    selectAllEl.indeterminate = false;
+  });
+
+  function getSelectedTests() {
+    const checked = [...document.querySelectorAll(".test-checkbox:checked")].map(cb => cb.value);
+    // Si tout est coché, on envoie null (= toute la suite) plutôt qu'une
+    // liste explicite — évite de dépendre de l'ordre/complétude du fetch.
+    return checked.length === allTests.length ? null : checked;
+  }
+
+  function setRunningUI(isRunning, message) {
+    runBtn.disabled = isRunning;
+    stopBtn.style.display = isRunning ? "inline-flex" : "none";
+    stopBtn.disabled = false;
+    statusLine.style.display = isRunning ? "flex" : "none";
+    if (isRunning) statusLine.innerHTML = `<span class="spinner"></span> ${message}`;
+  }
+
+  async function pollRun(runId) {
+    let res, data;
+    try {
+      res = await fetch(`/api/run/${runId}`);
+      data = await res.json();
+    } catch {
+      pollTimer = setTimeout(() => pollRun(runId), 1500);
+      return;
+    }
+
+    if (data.status === "running") {
+      pollTimer = setTimeout(() => pollRun(runId), 1500);
+      return;
+    }
+
+    activeRunId = null;
+    setRunningUI(false);
+
+    if (data.status === "done") {
+      currentReport = data.report;
+      renderReport(currentReport);
+      loadLastRun();
+    } else if (data.status === "cancelled") {
+      errorBox.style.display = "block";
+      errorBox.style.background = "var(--surface-2)";
+      errorBox.style.color = "var(--text-secondary)";
+      errorBox.style.borderColor = "var(--border)";
+      errorBox.textContent = "Campagne annulée.";
+    } else {
+      errorBox.style.display = "block";
+      errorBox.textContent = `Échec de la campagne : ${data.error || "erreur inconnue"}`;
+    }
+  }
+
+  runBtn.addEventListener("click", async () => {
+    errorBox.style.display = "none";
+    errorBox.style.background = "";
+    errorBox.style.color = "";
+    errorBox.style.borderColor = "";
+    resultsEl.style.display = "none";
+    setRunningUI(true, "Campagne en cours — ça peut prendre une minute…");
+
+    try {
+      const res = await fetch("/api/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          specification: specificationEl.value.trim(),
+          selected_tests: getSelectedTests(),
+        }),
+      });
+      if (!res.ok) {
+        const detail = (await res.json().catch(() => ({}))).detail || res.statusText;
+        throw new Error(detail);
+      }
+      const { run_id } = await res.json();
+      activeRunId = run_id;
+      pollRun(run_id);
+    } catch (err) {
+      setRunningUI(false);
+      errorBox.style.display = "block";
+      errorBox.textContent = `Échec du lancement : ${err.message}`;
+    }
+  });
+
+  stopBtn.addEventListener("click", async () => {
+    if (!activeRunId) return;
+    stopBtn.disabled = true;
+    statusLine.innerHTML = `<span class="spinner"></span> Annulation en cours — s'arrête après l'étape actuelle…`;
+    clearTimeout(pollTimer);
+    try {
+      await fetch(`/api/run/${activeRunId}/cancel`, { method: "POST" });
+    } finally {
+      pollRun(activeRunId); // relance le sondage pour connaître l'état final
+    }
+  });
+
+  function renderReport(report) {
+    resultsEl.style.display = "block";
+    const rate = report.total > 0 ? Math.round((report.reussis / report.total) * 100) : 0;
+
+    document.getElementById("rate-number").textContent = `${rate} %`;
+    document.getElementById("bar-good").style.width = `${rate}%`;
+    document.getElementById("bar-critical").style.width = `${100 - rate}%`;
+    document.getElementById("stat-total").textContent = report.total;
+    document.getElementById("stat-good").textContent = report.reussis;
+    document.getElementById("stat-critical").textContent = report.echoues;
+    document.getElementById("resume-text").textContent = report.resume;
+
+    document.getElementById("tc-rows").innerHTML = report.details.map(d => {
+      const statusKey = d.statut === "réussi" ? "reussi" : "echoue";
+      return `
+        <tr data-status="${statusKey}">
+          <td>
+            <div class="tc-title-cell">
+              <span class="tc-title">${d.titre}</span>
+              <span class="tc-id">${d.test_id}</span>
+            </div>
+          </td>
+          <td><span class="pill ${statusKey === 'reussi' ? 'good' : 'critical'}">${statusKey === 'reussi' ? CHECK : CROSS} ${statusKey === 'reussi' ? 'Réussi' : 'Échoué'}</span></td>
+          <td>${d.categorie ? `<span class="category-tag">${d.categorie}</span>` : '<span style="color: var(--text-muted);">—</span>'}</td>
+          <td class="tc-comment">${d.commentaire}</td>
+        </tr>
+      `;
+    }).join("");
+
+    const suggestions = report.suggestions_couverture || [];
+    document.getElementById("suggestions-section").style.display = suggestions.length ? "block" : "none";
+    document.getElementById("suggestions-list").innerHTML = suggestions.map(s => `<div class="suggestion-item">${s}</div>`).join("");
+
+    document.getElementById("reco-list").innerHTML = report.recommandations.map(r => `<div class="reco-item">${r}</div>`).join("");
+
+    currentFilter = "tous";
+    document.querySelectorAll(".filter-chip").forEach(c => c.classList.toggle("active", c.dataset.filter === "tous"));
+    applyFilter();
+  }
+
+  document.querySelectorAll(".filter-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      currentFilter = chip.dataset.filter;
+      document.querySelectorAll(".filter-chip").forEach(c => c.classList.toggle("active", c === chip));
+      applyFilter();
+    });
+  });
+
+  function applyFilter() {
+    document.querySelectorAll("#tc-rows tr").forEach(tr => {
+      tr.style.display = (currentFilter === "tous" || tr.dataset.status === currentFilter) ? "" : "none";
+    });
+  }
+
+  function visibleDetails() {
+    if (!currentReport) return [];
+    return currentReport.details.filter(d => {
+      const statusKey = d.statut === "réussi" ? "reussi" : "echoue";
+      return currentFilter === "tous" || statusKey === currentFilter;
+    });
+  }
+
+  function csvEscape(value) {
+    const str = String(value ?? "");
+    return /[";\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
+  }
+
+  function downloadBlob(filename, content, mime) {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  document.getElementById("export-csv").addEventListener("click", () => {
+    const header = ["ID", "Titre", "Statut", "Categorie", "Commentaire"];
+    const lines = [header.map(csvEscape).join(";")];
+    visibleDetails().forEach(d => lines.push(
+      [d.test_id, d.titre, d.statut, d.categorie ?? "", d.commentaire].map(csvEscape).join(";")
+    ));
+    downloadBlob("rapport-qa.csv", "\uFEFF" + lines.join("\r\n"), "text/csv;charset=utf-8");
+  });
+
+  document.getElementById("export-json").addEventListener("click", () => {
+    downloadBlob("rapport-qa.json", JSON.stringify(visibleDetails(), null, 2), "application/json");
+  });
+
+  loadTests();
+  loadLastRun();
+  updateCostEstimate();
+</script>
+</body>
+</html>
