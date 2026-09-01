@@ -76,6 +76,25 @@ def list_available_tests() -> list[str]:
     ]
 
 
+MAX_ERROR_TEXT_LENGTH = 4000
+
+
+def _extract_error_text(node: ET.Element | None) -> str:
+    """L'attribut `message` d'un <failure>/<error> pytest est un résumé
+    court — le VRAI détail (ligne de code fautive, chemin fichier:ligne,
+    diff d'assertion complet) est dans le texte de l'élément, ignoré
+    jusqu'ici (vérifié empiriquement avant ce correctif : voir la sonde
+    _scratch_failure_probe.py utilisée pour inspecter un vrai XML). C'est
+    ce texte qui donne à Triage et au Rapporteur de quoi juger correctement
+    une catégorie, pas le seul résumé."""
+    if node is None:
+        return ""
+    text = (node.text or "").strip()
+    if text:
+        return text[:MAX_ERROR_TEXT_LENGTH]
+    return node.get("message", "")
+
+
 def _parse_junit(junit_path: Path) -> list[ExecutionResult]:
     if not junit_path.exists():
         return []
@@ -102,7 +121,7 @@ def _parse_junit(junit_path: Path) -> list[ExecutionResult]:
                 titre=name,
                 passed=node is None,
                 duree_secondes=float(testcase.get("time", "0")),
-                message_erreur=(node.get("message", "") if node is not None else ""),
+                message_erreur=_extract_error_text(node),
                 fichier=fichier,
             )
         )

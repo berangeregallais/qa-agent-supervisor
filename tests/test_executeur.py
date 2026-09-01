@@ -2,9 +2,51 @@
 sous-processus pytest : uniquement le parsing JUnit/rerun-counts et la
 gestion d'état du sous-processus, qui sont déterministes."""
 
+import xml.etree.ElementTree as ET
 from unittest.mock import MagicMock, patch
 
 from agents import executeur
+
+
+class TestExtractErrorText:
+    """L'attribut `message` d'un <failure> pytest est un résumé tronqué —
+    le vrai détail (ligne de code, assertion complète) est dans le TEXTE de
+    l'élément. Vérifié sur un vrai run pytest avant ce correctif (voir le
+    commentaire de _extract_error_text)."""
+
+    def test_none_node_returns_empty_string(self):
+        assert executeur._extract_error_text(None) == ""
+
+    def test_prefers_full_text_over_short_message_attribute(self):
+        node = ET.fromstring(
+            '<failure message="résumé court">'
+            "def test_x():\n>       assert 1 == 2\nE       AssertionError\n"
+            "</failure>"
+        )
+
+        result = executeur._extract_error_text(node)
+
+        assert "résumé court" not in result
+        assert "assert 1 == 2" in result
+        assert "AssertionError" in result
+
+    def test_falls_back_to_message_when_text_is_empty(self):
+        node = ET.fromstring('<failure message="seul indice disponible"></failure>')
+
+        assert executeur._extract_error_text(node) == "seul indice disponible"
+
+    def test_falls_back_to_message_when_text_is_only_whitespace(self):
+        node = ET.fromstring('<failure message="fallback">   \n   </failure>')
+
+        assert executeur._extract_error_text(node) == "fallback"
+
+    def test_truncates_very_long_text(self):
+        long_text = "x" * (executeur.MAX_ERROR_TEXT_LENGTH + 500)
+        node = ET.fromstring(f'<failure message="short">{long_text}</failure>')
+
+        result = executeur._extract_error_text(node)
+
+        assert len(result) == executeur.MAX_ERROR_TEXT_LENGTH
 
 
 class TestParseJunit:
