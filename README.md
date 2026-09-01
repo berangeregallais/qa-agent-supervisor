@@ -73,23 +73,29 @@ ordre de grandeur, pas une facture exacte.
 .venv\Scripts\python.exe -m pytest -v
 ```
 
-61 tests, aucun appel Claude réel ni sous-processus pytest réel — tout ce
+81 tests, aucun appel Claude réel ni sous-processus pytest réel — tout ce
 qui touche l'API Anthropic ou un vrai `pytest` est mocké (`unittest.mock`).
 Ce qui est couvert :
 
-- **Logique pure** : parsing JUnit XML, lecture du compteur de reruns,
-  construction de l'état initial, persistance du "dernier run".
+- **Logique pure** : parsing JUnit XML (y compris le texte complet des
+  échecs, pas seulement le résumé court), lecture du compteur de reruns,
+  construction de l'état initial, persistance du "dernier run" et de
+  l'historique.
 - **Décision déterministe du Triage** : un test récupéré après rerun est
   catégorisé "flaky" par preuve directe, sans jamais appeler Claude — testé
   en vérifiant qu'aucun mock d'API n'est nécessaire pour ce cas précis.
+- **Non-duplication de l'Analyste** : il reçoit la vraie liste des tests
+  existants et ne doit jamais reproposer une piste déjà couverte — testé
+  sur le contenu du prompt envoyé, et validé une fois par un vrai appel
+  Claude (voir historique de commits).
 - **Câblage des agents qui appellent Claude** (Analyste, Superviseur,
   Triage sur échec persistant, Rapporteur) : le client Anthropic est mocké,
   on vérifie que la décision/sortie simulée est correctement intégrée dans
   le state — pas la qualité de la décision elle-même (voir "Pistes
   d'évolution").
 - **L'API FastAPI** via `TestClient` : cycle de vie complet d'un run
-  (running → done/error/cancelled), 404 sur un run inconnu, réactivité de
-  l'annulation pendant qu'un run "long" est simulé en cours.
+  (running → done/error/cancelled), historique, 404 sur un run inconnu,
+  réactivité de l'annulation pendant qu'un run "long" est simulé en cours.
 
 ## Structure
 
@@ -115,12 +121,25 @@ reports/        généré à chaque run (JUnit XML, historique) — jamais commi
   avec suivi dans le temps. Nécessite un compte LangSmith séparé et un
   vrai jeu d'exemples de référence — volontairement pas fait aujourd'hui
   pour ne pas bâcler ni le jeu d'exemples ni la suite pytest existante.
-- **Historique des runs** (SQLite ou JSON horodaté par run) pour calculer
-  un vrai taux de flakiness dans le temps, pas seulement sur un run isolé.
-- **Rapporteur multi-niveaux** : un résumé différent selon le lecteur (dev
-  vs décideur).
-- **Agent Validateur** (vérifier qu'une assertion peut réellement échouer)
-  et **Agent Data** (V2, cycle de vie des données de test) — évoqués dans
-  l'architecture mais jamais implémentés.
-- CI GitHub Actions, notifications Slack/email sur détection d'un vrai
-  `bug_produit`, coût cumulé suivi dans le temps.
+- **Agent Validateur léger** (vérifier qu'une assertion peut réellement
+  échouer, une forme allégée de mutation testing) — évoqué dans
+  l'architecture mais jamais implémenté.
+- **Agent Data — délibérément non implémenté, pas juste "pas encore fait".**
+  Deux contraintes réelles du site en bloquent une version sûre :
+  1. Le catalogue produit (titre, description, images) est codé en dur
+     dans `src/lib/catalogue.ts` côté site, pas en base — créer un
+     "produit de test" demanderait de modifier et redéployer le code du
+     site, hors périmètre d'un agent de test.
+  2. Le stock/prix (seule donnée réellement en Supabase) est lu
+     **côté serveur** (Server Component Next.js), avant que la page
+     n'atteigne le navigateur — `page.route()` ne peut donc rien
+     intercepter ici (limite déjà rencontrée en testant les formulaires).
+     Toute donnée de test contrôlée impliquerait d'écrire directement dans
+     le Supabase de **production**, avec un risque réel (un vrai client
+     pourrait voir un stock/prix de test pendant la fenêtre du run).
+
+  Un Agent Data sûr nécessite un environnement de staging séparé (second
+  déploiement Vercel + second projet Supabase) — un chantier
+  d'infrastructure à part entière, pas un ajout d'agent.
+- Notifications Slack/email sur détection d'un vrai `bug_produit`, coût
+  cumulé suivi dans le temps.
