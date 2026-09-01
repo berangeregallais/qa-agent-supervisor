@@ -1,17 +1,17 @@
-"""Assemble le graphe Supervisor complet.
+"""Assembles the complete Supervisor graph.
 
-Analyste (suggestions) -> Exécuteur (vraie suite) -> Triage (si échecs)
-                                                    -> Rapporteur (sinon)
+Analyst (suggestions) -> Executor (real suite) -> Triage (if failures)
+                                                 -> Reporter (otherwise)
 
-Chaque agent retourne systématiquement au Superviseur — structure
-hub-and-spoke caractéristique du pattern Supervisor.
+Every agent always returns to the Supervisor — the hub-and-spoke structure
+characteristic of the Supervisor pattern.
 """
 
 from langgraph.graph import END, START, StateGraph
 
-from agents.analyste import analyste_node
-from agents.executeur import executeur_node
-from agents.rapporteur import rapporteur_node
+from agents.analyst import analyst_node
+from agents.executor import executor_node
+from agents.reporter import reporter_node
 from agents.triage import triage_node
 from orchestrator.state import QAOrchestratorState
 from orchestrator.supervisor import route_from_supervisor, supervisor_node
@@ -21,27 +21,27 @@ def build_graph():
     graph = StateGraph(QAOrchestratorState)
 
     graph.add_node("supervisor", supervisor_node)
-    graph.add_node("analyste", analyste_node)
-    graph.add_node("executeur", executeur_node)
+    graph.add_node("analyst", analyst_node)
+    graph.add_node("executor", executor_node)
     graph.add_node("triage", triage_node)
-    graph.add_node("rapporteur", rapporteur_node)
+    graph.add_node("reporter", reporter_node)
 
     graph.add_edge(START, "supervisor")
     graph.add_conditional_edges(
         "supervisor",
         route_from_supervisor,
         {
-            "analyste": "analyste",
-            "executeur": "executeur",
+            "analyst": "analyst",
+            "executor": "executor",
             "triage": "triage",
-            "rapporteur": "rapporteur",
+            "reporter": "reporter",
             "FINISH": END,
         },
     )
 
-    graph.add_edge("analyste", "supervisor")
-    graph.add_edge("executeur", "supervisor")
+    graph.add_edge("analyst", "supervisor")
+    graph.add_edge("executor", "supervisor")
     graph.add_edge("triage", "supervisor")
-    graph.add_edge("rapporteur", "supervisor")
+    graph.add_edge("reporter", "supervisor")
 
     return graph.compile()

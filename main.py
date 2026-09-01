@@ -1,7 +1,7 @@
-"""Point d'entrée CLI.
+"""CLI entry point.
 
-Usage :
-  python main.py "spécification en langage naturel"
+Usage:
+  python main.py "natural language specification"
   python main.py "" --tests tests/test_homepage.py::test_homepage_loads[chromium]
   python main.py "" --tests tests/test_homepage.py::test1 --tests tests/test_homepage.py::test2
 """
@@ -13,12 +13,12 @@ from orchestrator.runner import run_pipeline
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("specification", nargs="?", default="", help="Spécification en langage naturel (optionnelle)")
+    parser.add_argument("specification", nargs="?", default="", help="Natural language specification (optional)")
     parser.add_argument(
         "--tests",
         action="append",
         default=[],
-        help="Node ID pytest à exécuter (répétable). Omis = toute la suite.",
+        help="pytest node id to run (repeatable). Omitted = the whole suite.",
     )
     args = parser.parse_args()
 

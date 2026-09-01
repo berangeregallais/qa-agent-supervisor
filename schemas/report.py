@@ -5,30 +5,31 @@ from pydantic import BaseModel
 
 class ReportEntry(BaseModel):
     test_id: str
-    titre: str
-    statut: Literal["réussi", "échoué"]
-    categorie: Optional[str] = None  # renseigné pour les échecs, via l'Agent Triage
-    commentaire: str
+    title: str
+    status: Literal["passed", "failed"]
+    category: Optional[str] = None  # set for failures, via the Triage agent
+    comment: str
 
 
 class Report(BaseModel):
-    """Le rapport final, produit par l'Agent Rapporteur.
+    """The final report, produced by the Reporter agent.
 
-    Deux résumés distincts, pour deux lecteurs différents — jamais un seul
-    texte qui essaie de servir les deux à la fois :
-    - `resume` : niveau développeur/QA, détails techniques utiles pour agir.
-    - `resume_direction` : 3 lignes maximum, orienté statut/risque/décision,
-      sans jargon technique — ce qu'on montrerait à quelqu'un qui doit
-      décider si on met en production, pas comment corriger un test.
+    Two distinct summaries, for two different readers — never a single
+    text trying to serve both at once:
+    - `summary`: developer/QA level, technical details useful to act on.
+    - `executive_summary`: 3 sentences max, status/risk/decision oriented,
+      no technical jargon — what you'd show someone who needs to decide
+      whether to ship, not how to fix a test.
     """
 
-    resume: str
-    resume_direction: str
+    summary: str
+    executive_summary: str
     total: int
-    reussis: int
-    echoues: int
+    passed: int
+    failed: int
     details: list[ReportEntry]
-    # Idées de l'Analyste non couvertes par la suite actuelle — jamais
-    # exécutées ni vérifiées, à valider par un humain avant tout ajout réel.
-    suggestions_couverture: list[str] = []
-    recommandations: list[str]
+    # Ideas from the Analyst not covered by the current suite — never
+    # executed or verified, to be validated by a human before any real
+    # addition.
+    coverage_suggestions: list[str] = []
+    recommendations: list[str]

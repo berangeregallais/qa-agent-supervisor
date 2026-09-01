@@ -4,15 +4,15 @@ from pydantic import BaseModel, Field
 
 
 class TriageEntry(BaseModel):
-    """Catégorisation d'un échec réel par l'Agent Triage."""
+    """Categorization of a real failure by the Triage agent."""
 
     test_id: str
-    categorie: Literal["bug_produit", "test_fragile", "flaky", "environnement"]
-    confiance: float = Field(ge=0, le=1, description="0 = aucune certitude, 1 = certitude totale")
+    category: Literal["product_bug", "brittle_test", "flaky", "environment"]
+    confidence: float = Field(ge=0, le=1, description="0 = no confidence, 1 = full confidence")
     justification: str
 
 
 class TriageResult(BaseModel):
-    """Format de sortie structuré attendu de l'Agent Triage."""
+    """Structured output format expected from the Triage agent."""
 
     entries: list[TriageEntry]

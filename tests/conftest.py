@@ -1,4 +1,4 @@
-"""Fixtures partagées pour les tests des agents."""
+"""Shared fixtures for the agent tests."""
 
 import pytest
 
@@ -8,20 +8,20 @@ from schemas.report import Report
 
 @pytest.fixture
 def junit_xml_factory(tmp_path):
-    """Écrit un JUnit XML minimal mais réaliste (format réellement produit
-    par pytest, vérifié en direct plus tôt dans le projet) et renvoie son
-    chemin. `cases` est une liste de dicts : name, classname, time,
-    outcome ("passed" | "failed" | "error" | "skipped"), message (optionnel).
+    """Writes a minimal but realistic JUnit XML (the format actually
+    produced by pytest, verified live earlier in the project) and returns
+    its path. `cases` is a list of dicts: name, classname, time,
+    outcome ("passed" | "failed" | "error" | "skipped"), message (optional).
     """
 
-    def _write(cases: list[dict]) -> "Path":  # noqa: F821 - annotation en chaîne
+    def _write(cases: list[dict]) -> "Path":  # noqa: F821 - string annotation
         testcases_xml = []
         for case in cases:
             name = case["name"]
             classname = case.get("classname", "tests.test_example")
             time = case.get("time", "1.0")
             outcome = case.get("outcome", "passed")
-            message = case.get("message", "erreur simulée")
+            message = case.get("message", "simulated error")
 
             if outcome == "passed":
                 body = ""
@@ -30,9 +30,9 @@ def junit_xml_factory(tmp_path):
             elif outcome == "error":
                 body = f'<error message="{message}">{message}</error>'
             elif outcome == "skipped":
-                body = '<skipped message="skip simulé"></skipped>'
+                body = '<skipped message="simulated skip"></skipped>'
             else:
-                raise ValueError(f"outcome inconnu : {outcome}")
+                raise ValueError(f"unknown outcome: {outcome}")
 
             testcases_xml.append(
                 f'<testcase classname="{classname}" name="{name}" time="{time}">{body}</testcase>'
@@ -56,17 +56,17 @@ def junit_xml_factory(tmp_path):
 
 @pytest.fixture
 def execution_result_factory():
-    """Construit un ExecutionResult avec des valeurs par défaut sensées,
-    pour ne répéter que ce qui varie réellement d'un test à l'autre."""
+    """Builds an ExecutionResult with sensible defaults, so tests only
+    repeat what actually varies from one case to the next."""
 
     def _make(**overrides) -> ExecutionResult:
         defaults = dict(
             test_id="tests/test_example.py::test_something[chromium]",
-            titre="test_something",
+            title="test_something",
             passed=True,
-            duree_secondes=1.0,
-            message_erreur="",
-            fichier="tests/test_example.py",
+            duration_seconds=1.0,
+            error_message="",
+            file="tests/test_example.py",
             reruns=0,
         )
         defaults.update(overrides)
@@ -77,19 +77,19 @@ def execution_result_factory():
 
 @pytest.fixture
 def report_factory():
-    """Construit un Report minimal valide, pour les tests qui n'ont besoin
-    que de vérifier ce qui est FAIT du rapport (persistance, API), pas son
-    contenu détaillé."""
+    """Builds a minimal valid Report, for tests that only need to verify
+    what's DONE with the report (persistence, API), not its detailed
+    content."""
 
     def _make(**overrides) -> Report:
         defaults = dict(
-            resume="Résumé de test",
-            resume_direction="Tout va bien.",
+            summary="Test summary",
+            executive_summary="Everything is fine.",
             total=1,
-            reussis=1,
-            echoues=0,
+            passed=1,
+            failed=0,
             details=[],
-            recommandations=[],
+            recommendations=[],
         )
         defaults.update(overrides)
         return Report(**defaults)

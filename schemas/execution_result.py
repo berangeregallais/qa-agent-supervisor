@@ -2,17 +2,18 @@ from pydantic import BaseModel
 
 
 class ExecutionResult(BaseModel):
-    """Le résultat d'UN test réel de la suite maisoncarmenta-qa, produit par
-    l'Agent Exécuteur à partir du vrai run pytest (JUnit XML) — plus de code
-    généré ni de fichier ad hoc depuis le pivot."""
+    """The result of ONE real test from the maisoncarmenta-qa suite,
+    produced by the Executor agent from the actual pytest run (JUnit XML)
+    — no generated code or ad hoc file since the pivot away from
+    generation."""
 
-    test_id: str  # nodeid pytest, ex: tests/test_homepage.py::test_homepage_loads[chromium]
-    titre: str
+    test_id: str  # pytest node id, e.g. tests/test_homepage.py::test_homepage_loads[chromium]
+    title: str
     passed: bool
-    duree_secondes: float
-    message_erreur: str
-    fichier: str
-    # Nombre de reruns pytest-rerunfailures avant le résultat final. > 0 même
-    # sur un test `passed` = preuve empirique de flakiness (a échoué au
-    # moins une fois avant de réussir dans le même run) — pas une supposition.
+    duration_seconds: float
+    error_message: str
+    file: str
+    # Number of pytest-rerunfailures reruns before the final result. > 0
+    # even on a `passed` test = empirical proof of flakiness (it failed at
+    # least once before succeeding within the same run) — not a guess.
     reruns: int = 0

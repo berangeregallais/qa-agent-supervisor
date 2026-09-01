@@ -8,46 +8,46 @@ from schemas.report import Report
 from schemas.test_case import TestCase
 from schemas.triage import TriageEntry
 
-NextAgent = Literal["analyste", "executeur", "triage", "rapporteur", "FINISH"]
+NextAgent = Literal["analyst", "executor", "triage", "reporter", "FINISH"]
 
 
 class QAOrchestratorState(TypedDict):
-    """État partagé, passé et enrichi par chaque nœud du graphe.
+    """Shared state, passed and enriched by every node of the graph.
 
-    Deux catégories de champs, volontairement séparées :
-    - les données de travail (typées Pydantic), lues/écrites par les agents
-      pour accomplir leur tâche — le "quoi".
-    - `messages`, un journal de traçabilité en langage naturel (raisonnement
-      du superviseur, résumé d'activité de chaque agent) — pas consommé
-      programmatiquement par les agents, seulement pour l'observabilité
-      humaine et le débogage. Ne jamais y stocker une donnée dont un agent
-      a besoin pour fonctionner : ça doit toujours être un champ typé dédié.
+    Two categories of fields, deliberately separated:
+    - work data (Pydantic-typed), read/written by agents to do their job
+      — the "what".
+    - `messages`, a plain-language trace log (Supervisor reasoning,
+      per-agent activity summary) — never consumed programmatically by
+      agents, only for human observability/debugging. Never store a value
+      an agent needs to function in here — that should always be a
+      dedicated typed field.
     """
 
-    # Entrée du système
-    specification: str  # peut être vide : dans ce cas, l'Analyste est sauté
-    selected_tests: Optional[list[str]]  # None/vide = toute la suite
+    # System input
+    specification: str  # may be empty: in that case, the Analyst is skipped
+    selected_tests: Optional[list[str]]  # None/empty = the whole suite
 
-    # Suggestions de l'Analyste — jamais exécutées, juste indicatif (voir
-    # agents/analyste.py). Le nom des champs est conservé pour ne pas casser
-    # le schéma, mais leur rôle a changé depuis le pivot.
+    # Analyst suggestions — never executed, purely indicative (see
+    # agents/analyst.py). Field names kept for schema stability, but their
+    # role changed after the pivot.
     test_cases: list[TestCase]
-    couverture_jugee_suffisante: Optional[bool]
+    coverage_judged_sufficient: Optional[bool]
 
-    # Résultats RÉELS de la suite maisoncarmenta-qa (agents/executeur.py)
+    # REAL results from the maisoncarmenta-qa suite (agents/executor.py)
     execution_results: list[ExecutionResult]
 
-    # Catégorisation des échecs réels (agents/triage.py)
+    # Categorization of real failures (agents/triage.py)
     triage: list[TriageEntry]
 
     report: Optional[Report]
 
-    # Routage décidé par le superviseur à chaque tour
+    # Routing decided by the Supervisor on each turn
     next_agent: NextAgent
 
-    # Traçabilité (accumulé automatiquement par LangGraph via add_messages)
+    # Trace log (accumulated automatically by LangGraph via add_messages)
     messages: Annotated[list, add_messages]
 
-    # --- Réservé pour V2+, non peuplé par aucun agent actuel ---
-    test_data_handles: Optional[list[str]]  # Agent Data : identifiants des
-    # données de test créées, à nettoyer en fin de run
+    # --- Reserved for V2+, not populated by any current agent ---
+    test_data_handles: Optional[list[str]]  # Data agent: identifiers of
+    # test data created, to clean up at the end of the run

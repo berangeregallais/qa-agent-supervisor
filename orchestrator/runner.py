@@ -1,6 +1,5 @@
-"""Point d'entrée réutilisable du pipeline — partagé entre le CLI (main.py)
-et le serveur web (server.py), pour ne jamais dupliquer la construction de
-l'état initial."""
+"""Reusable pipeline entry point — shared between the CLI (main.py) and the
+web server (server.py), so the initial state is never built twice."""
 
 import json
 import shutil
@@ -17,19 +16,19 @@ REPORTS_DIR = Path(__file__).resolve().parent.parent / "reports"
 LAST_RUN_PATH = REPORTS_DIR / "last-run.json"
 HISTORY_PATH = REPORTS_DIR / "history.json"
 
-# Fichiers que _reset_reports_dir ne doit JAMAIS supprimer — ils doivent
-# survivre à travers les runs, y compris un run annulé ou en erreur.
+# Files _reset_reports_dir must NEVER delete — they must survive across
+# runs, including a cancelled or errored run.
 _PERSISTENT_FILENAMES = {LAST_RUN_PATH.name, HISTORY_PATH.name}
 
 MAX_HISTORY_ENTRIES = 50
 
 
 def _reset_reports_dir() -> None:
-    # Nettoie les artefacts du run précédent (JUnit XML, compteur de
-    # reruns...) sans jamais toucher last-run.json ni history.json : sinon
-    # un run annulé (qui ne va jamais jusqu'à _record_completed_run)
-    # effacerait la mémoire de tous les runs précédents sans jamais la
-    # reconstruire. Bug réel trouvé en construisant l'historique.
+    # Cleans up the previous run's artifacts (JUnit XML, rerun counter...)
+    # without ever touching last-run.json or history.json: otherwise a
+    # cancelled run (which never reaches _record_completed_run) would
+    # erase the memory of every previous run without ever rebuilding it.
+    # Real bug found while building the history feature.
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     for item in REPORTS_DIR.iterdir():
         if item.name in _PERSISTENT_FILENAMES:
@@ -47,13 +46,13 @@ def _load_history() -> list[dict]:
 
 
 def get_history() -> list[dict]:
-    """Renvoie les runs passés, du plus récent au plus ancien."""
+    """Returns past runs, most recent first."""
     return list(reversed(_load_history()))
 
 
 def _record_completed_run(report: Report) -> None:
-    """Enregistre le run à la fois comme "dernier run" et dans l'historique
-    — un seul point d'appel pour ne jamais faire l'un sans l'autre."""
+    """Records the run both as "last run" and in the history — a single
+    call site to never do one without the other."""
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now(timezone.utc).isoformat()
 
@@ -64,12 +63,12 @@ def _record_completed_run(report: Report) -> None:
         {
             "timestamp": timestamp,
             "total": report.total,
-            "reussis": report.reussis,
-            "echoues": report.echoues,
-            "resume": report.resume[:200],
+            "passed": report.passed,
+            "failed": report.failed,
+            "summary": report.summary[:200],
         }
     )
-    entries = entries[-MAX_HISTORY_ENTRIES:]  # évite une croissance illimitée
+    entries = entries[-MAX_HISTORY_ENTRIES:]  # avoid unbounded growth
     HISTORY_PATH.write_text(json.dumps(entries, indent=2), encoding="utf-8")
 
 
@@ -84,19 +83,19 @@ def _initial_state(specification: str, selected_tests: Optional[list[str]]) -> Q
         "specification": specification,
         "selected_tests": selected_tests or [],
         "test_cases": [],
-        "couverture_jugee_suffisante": None,
+        "coverage_judged_sufficient": None,
         "execution_results": [],
         "triage": [],
         "report": None,
-        "next_agent": "analyste",
+        "next_agent": "analyst",
         "messages": [],
         "test_data_handles": None,
     }
 
 
 def run_pipeline(specification: str = "", selected_tests: Optional[list[str]] = None) -> Report:
-    """Lance le graphe complet et renvoie le rapport final (usage CLI, pas
-    annulable — voir run_pipeline_cancelable pour l'usage serveur web)."""
+    """Runs the full graph and returns the final report (CLI usage, not
+    cancelable — see run_pipeline_cancelable for the web server usage)."""
     _reset_reports_dir()
 
     graph = build_graph()
@@ -105,7 +104,7 @@ def run_pipeline(specification: str = "", selected_tests: Optional[list[str]] = 
     )
 
     if final_state["report"] is None:
-        raise RuntimeError("Le pipeline s'est arrêté sans produire de rapport.")
+        raise RuntimeError("The pipeline stopped without producing a report.")
 
     _record_completed_run(final_state["report"])
     return final_state["report"]
@@ -116,16 +115,16 @@ def run_pipeline_cancelable(
     selected_tests: Optional[list[str]],
     cancel_event: threading.Event,
 ) -> Optional[Report]:
-    """Comme run_pipeline, mais s'arrête entre deux étapes du graphe si
-    `cancel_event` est levé pendant l'exécution. Renvoie None si annulé
-    avant qu'un rapport n'ait pu être produit.
+    """Like run_pipeline, but stops between two graph steps if
+    `cancel_event` is set during execution. Returns None if cancelled
+    before a report could be produced.
 
-    Limite assumée : l'étape EN COURS n'est pas interrompue instantanément
-    (un appel Claude en cours va à son terme, quelques secondes tout au
-    plus) — seule la prochaine étape est empêchée de démarrer. L'exception
-    est l'Exécuteur, dont le sous-processus pytest peut être tué directement
-    (voir agents/executeur.cancel_current_execution), car c'est la seule
-    étape assez longue pour que l'attente soit gênante.
+    Accepted limitation: the CURRENT step is not interrupted instantly (an
+    in-flight Claude call runs to completion, a few seconds at most) —
+    only the next step is prevented from starting. The exception is the
+    Executor, whose pytest subprocess can be killed directly (see
+    agents/executor.cancel_current_execution), since it's the only step
+    long enough for the wait to be annoying.
     """
     _reset_reports_dir()
 

@@ -1,3 +1,3 @@
-# La simple présence de ce fichier à la racine indique à pytest d'ajouter
-# ce dossier à sys.path, ce qui rend `agents/`, `orchestrator/` et
-# `schemas/` importables depuis tests/.
+# The mere presence of this file at the root tells pytest to add this
+# directory to sys.path, which makes `agents/`, `orchestrator/` and
+# `schemas/` importable from tests/.

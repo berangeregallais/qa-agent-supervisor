@@ -1,4 +1,4 @@
-name: Tests des agents
+name: Agent tests
 
 on:
   push:
@@ -15,9 +15,8 @@ jobs:
         with:
           python-version: "3.13"
 
-      # Aucun secret requis : tous les appels Claude et sous-processus
-      # pytest sont mockés dans la suite (voir tests/), rien de réel n'est
-      # jamais appelé ici.
+      # No secret required: every Claude call and pytest subprocess is
+      # mocked in the suite (see tests/) — nothing real is ever called here.
       - run: pip install -r requirements.txt
 
       - run: pytest -v

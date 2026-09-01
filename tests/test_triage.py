@@ -1,10 +1,10 @@
-"""Tests de l'Agent Triage.
+"""Tests for the Triage agent.
 
-Le point important à couvrir : la partie "flaky prouvé par rerun" ne doit
-JAMAIS déclencher d'appel Claude (c'est une preuve directe, pas un
-jugement) — testé en vérifiant qu'aucun mock d'API n'est nécessaire pour ce
-cas. La partie "échec persistant" nécessite un jugement LLM, mocké ici pour
-ne jamais dépenser un vrai appel API dans la suite de tests."""
+The important part to cover: the "flaky proven by rerun" branch must NEVER
+trigger a Claude call (it's direct proof, not a judgment call) — tested by
+verifying no API mock is needed for that case. The "persistent failure"
+branch needs an LLM judgment, mocked here so the test suite never spends a
+real API call."""
 
 from unittest.mock import MagicMock, patch
 
@@ -18,9 +18,9 @@ def _state_with(execution_results):
 
 class TestDeterministicFlakyDetection:
     def test_no_results_produces_no_triage_and_no_api_call(self, execution_result_factory):
-        # anthropic.Anthropic n'est jamais patché ici : si le code essayait
-        # de l'appeler sans clé configurée, ce test échouerait tout seul —
-        # c'est la preuve qu'aucun appel API n'a lieu.
+        # anthropic.Anthropic is never patched here: if the code tried to
+        # call it without a configured key, this test would fail on its
+        # own — that's the proof no API call happens.
         result = triage_node(_state_with([]))
         assert result["triage"] == []
 
@@ -40,8 +40,8 @@ class TestDeterministicFlakyDetection:
         assert len(result["triage"]) == 1
         entry = result["triage"][0]
         assert entry.test_id == "tests/x.py::y"
-        assert entry.categorie == "flaky"
-        assert entry.confiance == 1.0  # certitude totale : c'est une preuve, pas une estimation
+        assert entry.category == "flaky"
+        assert entry.confidence == 1.0  # full certainty: it's proof, not an estimate
         assert "2" in entry.justification
 
     def test_mix_of_recovered_flaky_and_clean_passes(self, execution_result_factory):
@@ -60,14 +60,14 @@ class TestPersistentFailureTriage:
     def test_persistent_failure_is_sent_to_claude_and_result_is_used(self, execution_result_factory):
         failing = execution_result_factory(
             test_id="tests/x.py::broken", passed=False, reruns=2,
-            message_erreur="AssertionError: attendu 200, reçu 404",
+            error_message="AssertionError: expected 200, got 404",
         )
 
         fake_entry = TriageEntry(
             test_id="tests/x.py::broken",
-            categorie="bug_produit",
-            confiance=0.9,
-            justification="Statut HTTP inattendu, comportement applicatif.",
+            category="product_bug",
+            confidence=0.9,
+            justification="Unexpected HTTP status, application behavior.",
         )
         fake_response = MagicMock(parsed_output=TriageResult(entries=[fake_entry]))
         fake_client = MagicMock()
@@ -78,7 +78,7 @@ class TestPersistentFailureTriage:
 
         assert result["triage"] == [fake_entry]
         fake_client.messages.parse.assert_called_once()
-        # Le message d'erreur réel doit être transmis au LLM, pas résumé/perdu.
+        # The real error message must reach the LLM, not be summarized/lost.
         sent_content = fake_client.messages.parse.call_args.kwargs["messages"][0]["content"]
         assert "404" in sent_content
 
@@ -87,7 +87,7 @@ class TestPersistentFailureTriage:
         failing = execution_result_factory(test_id="broken-one", passed=False, reruns=2)
 
         fake_entry = TriageEntry(
-            test_id="broken-one", categorie="environnement", confiance=0.6, justification="Timeout réseau."
+            test_id="broken-one", category="environment", confidence=0.6, justification="Network timeout."
         )
         fake_client = MagicMock()
         fake_client.messages.parse.return_value = MagicMock(
@@ -97,6 +97,6 @@ class TestPersistentFailureTriage:
         with patch("agents.triage.anthropic.Anthropic", return_value=fake_client):
             result = triage_node(_state_with([recovered, failing]))
 
-        categories = {e.test_id: e.categorie for e in result["triage"]}
+        categories = {e.test_id: e.category for e in result["triage"]}
         assert categories["flaky-one"] == "flaky"
-        assert categories["broken-one"] == "environnement"
+        assert categories["broken-one"] == "environment"

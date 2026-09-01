@@ -4,28 +4,28 @@ from pydantic import BaseModel, Field
 
 
 class TestCase(BaseModel):
-    """Un cas de test produit par l'Agent Analyste.
+    """A suggested test idea produced by the Analyst agent.
 
-    Suffisamment précis pour qu'un autre agent (Exécuteur) en dérive du code
-    Playwright sans avoir à interpréter/deviner quoi que ce soit.
+    Precise enough that another agent (or a human) could turn it into
+    Playwright code without having to guess anything.
     """
 
-    id: str = Field(description="Identifiant court et unique, ex: TC-001")
-    titre: str
+    id: str = Field(description="Short unique identifier, e.g. TC-001")
+    title: str
     description: str
-    etapes: list[str] = Field(description="Étapes numérotées, langage naturel")
-    resultat_attendu: str
-    priorite: Literal["haute", "moyenne", "basse"]
+    steps: list[str] = Field(description="Numbered steps, plain language")
+    expected_result: str
+    priority: Literal["high", "medium", "low"]
 
 
 class TestCaseList(BaseModel):
-    """Format de sortie structuré attendu de l'Agent Analyste."""
+    """Structured output format expected from the Analyst agent."""
 
     test_cases: list[TestCase]
-    couverture_jugee_suffisante: bool = Field(
+    coverage_judged_sufficient: bool = Field(
         description=(
-            "L'Analyste s'auto-évalue : est-ce que ces cas couvrent "
-            "raisonnablement la spécification fournie ? Sert au Superviseur "
-            "pour décider s'il faut repasser par l'Analyste plus tard."
+            "The Analyst self-assesses: do these cases reasonably cover "
+            "the given specification? Used by the Supervisor to decide "
+            "whether to go back to the Analyst later."
         )
     )

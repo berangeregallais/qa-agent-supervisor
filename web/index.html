@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -200,41 +200,41 @@
   <header class="masthead">
     <div>
       <h1 class="masthead-title">QA Maison Carmenta</h1>
-      <div class="masthead-sub">Pipeline multi-agent (Analyste → Exécuteur → Triage → Rapporteur)</div>
+      <div class="masthead-sub">Multi-agent pipeline (Analyst → Executor → Triage → Reporter)</div>
     </div>
   </header>
 
   <section class="panel">
     <div class="history-head">
-      <h2 style="margin: 0;">Historique des runs</h2>
+      <h2 style="margin: 0;">Run history</h2>
       <span class="history-count" id="history-count"></span>
     </div>
     <div id="history-content">
-      <div class="history-empty">Chargement…</div>
+      <div class="history-empty">Loading…</div>
     </div>
   </section>
 
   <section class="panel">
-    <h2>1. Choisir les tests</h2>
+    <h2>1. Choose the tests</h2>
     <div class="master-row">
       <input type="checkbox" id="select-all" checked>
-      <label for="select-all">Tous les tests</label>
+      <label for="select-all">All tests</label>
     </div>
     <div class="test-list" id="test-list">
-      <div style="color: var(--text-muted); font-size: 13px; padding: 8px;">Chargement de la liste des tests…</div>
+      <div style="color: var(--text-muted); font-size: 13px; padding: 8px;">Loading the test list…</div>
     </div>
   </section>
 
   <section class="panel">
-    <h2>2. Idées de test supplémentaires (optionnel)</h2>
-    <textarea id="specification" placeholder="Décris un scénario ou une user story si tu veux que l'agent suggère des pistes de couverture non encore testées. Laisse vide pour ignorer cette étape."></textarea>
-    <div class="field-note">Ces suggestions ne sont jamais exécutées automatiquement — juste des idées à valider.</div>
+    <h2>2. Additional test ideas (optional)</h2>
+    <textarea id="specification" placeholder="Describe a scenario or user story if you'd like the agent to suggest coverage ideas that aren't tested yet. Leave blank to skip this step."></textarea>
+    <div class="field-note">These suggestions are never run automatically — just ideas to review.</div>
   </section>
 
   <div class="run-bar">
     <div>
-      <button class="run-btn" id="run-btn">Lancer la campagne</button>
-      <button class="stop-btn" id="stop-btn" style="display: none;">Arrêter</button>
+      <button class="run-btn" id="run-btn">Run the campaign</button>
+      <button class="stop-btn" id="stop-btn" style="display: none;">Stop</button>
     </div>
     <div class="run-meta">
       <div id="cost-estimate" class="cost-estimate"></div>
@@ -250,28 +250,28 @@
         <div class="hero-rate">
           <div>
             <div class="rate-number" id="rate-number">–</div>
-            <div class="rate-label">Taux de réussite</div>
+            <div class="rate-label">Pass rate</div>
           </div>
           <div class="bar-track"><div class="bar-good" id="bar-good"></div><div class="bar-critical" id="bar-critical"></div></div>
           <div class="bar-legend">
-            <span><span class="dot" style="background: var(--status-good)"></span>Réussis</span>
-            <span><span class="dot" style="background: var(--status-critical)"></span>Échoués</span>
+            <span><span class="dot" style="background: var(--status-good)"></span>Passed</span>
+            <span><span class="dot" style="background: var(--status-critical)"></span>Failed</span>
           </div>
         </div>
         <div class="stat-grid">
-          <div class="stat-tile"><div class="value" id="stat-total">–</div><div class="label">Exécutés</div></div>
-          <div class="stat-tile good"><div class="value" id="stat-good">–</div><div class="label">Réussis</div></div>
-          <div class="stat-tile critical"><div class="value" id="stat-critical">–</div><div class="label">Échoués</div></div>
+          <div class="stat-tile"><div class="value" id="stat-total">–</div><div class="label">Run</div></div>
+          <div class="stat-tile good"><div class="value" id="stat-good">–</div><div class="label">Passed</div></div>
+          <div class="stat-tile critical"><div class="value" id="stat-critical">–</div><div class="label">Failed</div></div>
         </div>
       </div>
     </section>
 
     <section>
       <div class="toolbar">
-        <h2 style="margin: 0;">Synthèse</h2>
-        <div class="filter-group" role="group" aria-label="Niveau de synthèse">
-          <button class="level-chip active" data-level="dev">Vue développeur</button>
-          <button class="level-chip" data-level="direction">Vue direction</button>
+        <h2 style="margin: 0;">Summary</h2>
+        <div class="filter-group" role="group" aria-label="Summary level">
+          <button class="level-chip active" data-level="dev">Developer view</button>
+          <button class="level-chip" data-level="executive">Executive view</button>
         </div>
       </div>
       <div class="panel resume-card" id="resume-text"></div>
@@ -279,35 +279,35 @@
 
     <section>
       <div class="toolbar">
-        <h2 style="margin: 0;">Détail</h2>
-        <div class="filter-group" role="group" aria-label="Filtrer par statut">
-          <button class="filter-chip active" data-filter="tous">Tous</button>
-          <button class="filter-chip" data-filter="reussi">Réussis</button>
-          <button class="filter-chip" data-filter="echoue">Échoués</button>
+        <h2 style="margin: 0;">Details</h2>
+        <div class="filter-group" role="group" aria-label="Filter by status">
+          <button class="filter-chip active" data-filter="all">All</button>
+          <button class="filter-chip" data-filter="passed">Passed</button>
+          <button class="filter-chip" data-filter="failed">Failed</button>
         </div>
       </div>
       <div class="toolbar">
         <span></span>
         <div>
-          <button class="export-btn" id="export-csv">Exporter CSV</button>
-          <button class="export-btn" id="export-json">Exporter JSON</button>
+          <button class="export-btn" id="export-csv">Export CSV</button>
+          <button class="export-btn" id="export-json">Export JSON</button>
         </div>
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Test</th><th>Statut</th><th>Catégorie</th><th>Commentaire</th></tr></thead>
+          <thead><tr><th>Test</th><th>Status</th><th>Category</th><th>Comment</th></tr></thead>
           <tbody id="tc-rows"></tbody>
         </table>
       </div>
     </section>
 
     <section id="suggestions-section" style="display: none;">
-      <h2>Suggestions de couverture (non vérifiées)</h2>
+      <h2>Coverage suggestions (unverified)</h2>
       <div id="suggestions-list"></div>
     </section>
 
     <section>
-      <h2>Recommandations</h2>
+      <h2>Recommendations</h2>
       <div class="reco-list" id="reco-list"></div>
     </section>
   </div>
@@ -331,28 +331,28 @@
 
   let allTests = [];
   let currentReport = null;
-  let currentFilter = "tous";
+  let currentFilter = "all";
   let currentLevel = "dev";
   let activeRunId = null;
   let pollTimer = null;
   let lastRunTimestamp = null;
 
-  // ---------- Dernier run ----------
+  // ---------- Last run ----------
 
   function formatRelative(isoTimestamp) {
     const diffMs = Date.now() - new Date(isoTimestamp).getTime();
     const minutes = Math.floor(diffMs / 60000);
-    if (minutes < 1) return "à l'instant";
-    if (minutes === 1) return "il y a 1 minute";
-    if (minutes < 60) return `il y a ${minutes} minutes`;
+    if (minutes < 1) return "just now";
+    if (minutes === 1) return "1 minute ago";
+    if (minutes < 60) return `${minutes} minutes ago`;
     const hours = Math.floor(minutes / 60);
-    return hours === 1 ? "il y a 1 heure" : `il y a ${hours} heures`;
+    return hours === 1 ? "1 hour ago" : `${hours} hours ago`;
   }
 
   function renderLastRun() {
     lastRunEl.textContent = lastRunTimestamp
-      ? `Dernier run : ${formatRelative(lastRunTimestamp)}`
-      : "Aucun run pour l'instant";
+      ? `Last run: ${formatRelative(lastRunTimestamp)}`
+      : "No run yet";
   }
 
   async function loadLastRun() {
@@ -366,23 +366,23 @@
     renderLastRun();
   }
 
-  setInterval(renderLastRun, 30000); // rafraîchit le texte relatif même sans nouveau run
+  setInterval(renderLastRun, 30000); // refreshes the relative text even without a new run
 
-  // ---------- Historique des runs ----------
+  // ---------- Run history ----------
 
   const historyContentEl = document.getElementById("history-content");
   const historyCountEl = document.getElementById("history-count");
 
   function formatHistoryWhen(isoTimestamp) {
     const date = new Date(isoTimestamp);
-    return date.toLocaleString("fr-FR", {
+    return date.toLocaleString("en-US", {
       day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
     });
   }
 
   function renderHistory(entries) {
     if (!entries.length) {
-      historyContentEl.innerHTML = '<div class="history-empty">Aucun run pour l\'instant — lance la première campagne ci-dessous.</div>';
+      historyContentEl.innerHTML = '<div class="history-empty">No run yet — start the first campaign below.</div>';
       historyCountEl.textContent = "";
       return;
     }
@@ -390,7 +390,7 @@
     historyCountEl.textContent = `${entries.length} run${entries.length > 1 ? "s" : ""}`;
 
     historyContentEl.innerHTML = entries.map(entry => {
-      const rate = entry.total > 0 ? Math.round((entry.reussis / entry.total) * 100) : 0;
+      const rate = entry.total > 0 ? Math.round((entry.passed / entry.total) * 100) : 0;
       return `
         <div class="history-row">
           <span class="history-when">${formatHistoryWhen(entry.timestamp)}</span>
@@ -401,7 +401,7 @@
               <div class="bar-critical" style="width: ${100 - rate}%"></div>
             </div>
           </div>
-          <span class="history-resume" title="${entry.resume}">${entry.resume}</span>
+          <span class="history-resume" title="${entry.summary}">${entry.summary}</span>
         </div>
       `;
     }).join("");
@@ -412,26 +412,26 @@
       const res = await fetch("/api/history");
       renderHistory(await res.json());
     } catch {
-      historyContentEl.innerHTML = '<div class="history-empty">Historique indisponible.</div>';
+      historyContentEl.innerHTML = '<div class="history-empty">History unavailable.</div>';
     }
   }
 
-  // ---------- Estimation de coût ----------
-  // Ordre de grandeur, pas une facture : le Superviseur fait un appel avant
-  // chaque étape (~4 dans le cas simple), + 1 si des suggestions sont
-  // demandées (Analyste), + jusqu'à 1-2 de plus si le Triage a du travail
-  // (imprévisible avant le run, d'où la fourchette).
+  // ---------- Cost estimate ----------
+  // Order of magnitude, not an invoice: the Supervisor makes one call before
+  // each step (~4 in the simple case), +1 if suggestions are requested
+  // (Analyst), +up to 1-2 more if Triage has work to do (unpredictable
+  // before the run, hence the range).
 
   function updateCostEstimate() {
     const hasSpec = specificationEl.value.trim().length > 0;
-    let callsMin = 4; // superviseur x3 + rapporteur x1
+    let callsMin = 4; // supervisor x3 + reporter x1
     let callsMax = 4;
-    if (hasSpec) { callsMin += 2; callsMax += 2; } // analyste + 1 superviseur
-    callsMax += 2; // triage + 1 superviseur, si des tests échouent
+    if (hasSpec) { callsMin += 2; callsMax += 2; } // analyst + 1 supervisor
+    callsMax += 2; // triage + 1 supervisor, if any tests fail
 
     const costMin = (callsMin * 0.01).toFixed(2);
     const costMax = (callsMax * 0.03).toFixed(2);
-    costEstimateEl.textContent = `≈ ${callsMin}-${callsMax} appels Claude · ~$${costMin}-${costMax} (ordre de grandeur)`;
+    costEstimateEl.textContent = `≈ ${callsMin}-${callsMax} Claude calls · ~$${costMin}-${costMax} (order of magnitude)`;
   }
 
   specificationEl.addEventListener("input", updateCostEstimate);
@@ -442,7 +442,7 @@
       if (!res.ok) throw new Error(await res.text());
       allTests = await res.json();
     } catch (err) {
-      testListEl.innerHTML = `<div style="color: var(--status-critical); font-size: 13px; padding: 8px;">Impossible de charger la liste des tests : ${err.message}</div>`;
+      testListEl.innerHTML = `<div style="color: var(--status-critical); font-size: 13px; padding: 8px;">Could not load the test list: ${err.message}</div>`;
       return;
     }
 
@@ -474,8 +474,8 @@
 
   function getSelectedTests() {
     const checked = [...document.querySelectorAll(".test-checkbox:checked")].map(cb => cb.value);
-    // Si tout est coché, on envoie null (= toute la suite) plutôt qu'une
-    // liste explicite — évite de dépendre de l'ordre/complétude du fetch.
+    // If everything is checked, send null (= the whole suite) rather than an
+    // explicit list — avoids depending on the fetch's order/completeness.
     return checked.length === allTests.length ? null : checked;
   }
 
@@ -515,10 +515,10 @@
       errorBox.style.background = "var(--surface-2)";
       errorBox.style.color = "var(--text-secondary)";
       errorBox.style.borderColor = "var(--border)";
-      errorBox.textContent = "Campagne annulée.";
+      errorBox.textContent = "Campaign cancelled.";
     } else {
       errorBox.style.display = "block";
-      errorBox.textContent = `Échec de la campagne : ${data.error || "erreur inconnue"}`;
+      errorBox.textContent = `Campaign failed: ${data.error || "unknown error"}`;
     }
   }
 
@@ -528,7 +528,7 @@
     errorBox.style.color = "";
     errorBox.style.borderColor = "";
     resultsEl.style.display = "none";
-    setRunningUI(true, "Campagne en cours — ça peut prendre une minute…");
+    setRunningUI(true, "Campaign in progress — this can take a minute…");
 
     try {
       const res = await fetch("/api/run", {
@@ -549,60 +549,60 @@
     } catch (err) {
       setRunningUI(false);
       errorBox.style.display = "block";
-      errorBox.textContent = `Échec du lancement : ${err.message}`;
+      errorBox.textContent = `Failed to start: ${err.message}`;
     }
   });
 
   stopBtn.addEventListener("click", async () => {
     if (!activeRunId) return;
     stopBtn.disabled = true;
-    statusLine.innerHTML = `<span class="spinner"></span> Annulation en cours — s'arrête après l'étape actuelle…`;
+    statusLine.innerHTML = `<span class="spinner"></span> Cancelling — stops after the current step…`;
     clearTimeout(pollTimer);
     try {
       await fetch(`/api/run/${activeRunId}/cancel`, { method: "POST" });
     } finally {
-      pollRun(activeRunId); // relance le sondage pour connaître l'état final
+      pollRun(activeRunId); // resume polling to learn the final state
     }
   });
 
   function renderReport(report) {
     resultsEl.style.display = "block";
-    const rate = report.total > 0 ? Math.round((report.reussis / report.total) * 100) : 0;
+    const rate = report.total > 0 ? Math.round((report.passed / report.total) * 100) : 0;
 
     document.getElementById("rate-number").textContent = `${rate} %`;
     document.getElementById("bar-good").style.width = `${rate}%`;
     document.getElementById("bar-critical").style.width = `${100 - rate}%`;
     document.getElementById("stat-total").textContent = report.total;
-    document.getElementById("stat-good").textContent = report.reussis;
-    document.getElementById("stat-critical").textContent = report.echoues;
+    document.getElementById("stat-good").textContent = report.passed;
+    document.getElementById("stat-critical").textContent = report.failed;
     currentLevel = "dev";
     renderResumeLevel();
 
     document.getElementById("tc-rows").innerHTML = report.details.map(d => {
-      const statusKey = d.statut === "réussi" ? "reussi" : "echoue";
+      const statusKey = d.status === "passed" ? "passed" : "failed";
       return `
         <tr data-status="${statusKey}">
           <td>
             <div class="tc-title-cell">
-              <span class="tc-title">${d.titre}</span>
+              <span class="tc-title">${d.title}</span>
               <span class="tc-id">${d.test_id}</span>
             </div>
           </td>
-          <td><span class="pill ${statusKey === 'reussi' ? 'good' : 'critical'}">${statusKey === 'reussi' ? CHECK : CROSS} ${statusKey === 'reussi' ? 'Réussi' : 'Échoué'}</span></td>
-          <td>${d.categorie ? `<span class="category-tag">${d.categorie}</span>` : '<span style="color: var(--text-muted);">—</span>'}</td>
-          <td class="tc-comment">${d.commentaire}</td>
+          <td><span class="pill ${statusKey === 'passed' ? 'good' : 'critical'}">${statusKey === 'passed' ? CHECK : CROSS} ${statusKey === 'passed' ? 'Passed' : 'Failed'}</span></td>
+          <td>${d.category ? `<span class="category-tag">${d.category}</span>` : '<span style="color: var(--text-muted);">—</span>'}</td>
+          <td class="tc-comment">${d.comment}</td>
         </tr>
       `;
     }).join("");
 
-    const suggestions = report.suggestions_couverture || [];
+    const suggestions = report.coverage_suggestions || [];
     document.getElementById("suggestions-section").style.display = suggestions.length ? "block" : "none";
     document.getElementById("suggestions-list").innerHTML = suggestions.map(s => `<div class="suggestion-item">${s}</div>`).join("");
 
-    document.getElementById("reco-list").innerHTML = report.recommandations.map(r => `<div class="reco-item">${r}</div>`).join("");
+    document.getElementById("reco-list").innerHTML = report.recommendations.map(r => `<div class="reco-item">${r}</div>`).join("");
 
-    currentFilter = "tous";
-    document.querySelectorAll(".filter-chip").forEach(c => c.classList.toggle("active", c.dataset.filter === "tous"));
+    currentFilter = "all";
+    document.querySelectorAll(".filter-chip").forEach(c => c.classList.toggle("active", c.dataset.filter === "all"));
     applyFilter();
   }
 
@@ -616,14 +616,14 @@
 
   function applyFilter() {
     document.querySelectorAll("#tc-rows tr").forEach(tr => {
-      tr.style.display = (currentFilter === "tous" || tr.dataset.status === currentFilter) ? "" : "none";
+      tr.style.display = (currentFilter === "all" || tr.dataset.status === currentFilter) ? "" : "none";
     });
   }
 
   function renderResumeLevel() {
     if (!currentReport) return;
     document.getElementById("resume-text").textContent =
-      currentLevel === "direction" ? currentReport.resume_direction : currentReport.resume;
+      currentLevel === "executive" ? currentReport.executive_summary : currentReport.summary;
   }
 
   document.querySelectorAll(".level-chip").forEach(chip => {
@@ -637,8 +637,8 @@
   function visibleDetails() {
     if (!currentReport) return [];
     return currentReport.details.filter(d => {
-      const statusKey = d.statut === "réussi" ? "reussi" : "echoue";
-      return currentFilter === "tous" || statusKey === currentFilter;
+      const statusKey = d.status === "passed" ? "passed" : "failed";
+      return currentFilter === "all" || statusKey === currentFilter;
     });
   }
 
@@ -660,16 +660,16 @@
   }
 
   document.getElementById("export-csv").addEventListener("click", () => {
-    const header = ["ID", "Titre", "Statut", "Categorie", "Commentaire"];
+    const header = ["ID", "Title", "Status", "Category", "Comment"];
     const lines = [header.map(csvEscape).join(";")];
     visibleDetails().forEach(d => lines.push(
-      [d.test_id, d.titre, d.statut, d.categorie ?? "", d.commentaire].map(csvEscape).join(";")
+      [d.test_id, d.title, d.status, d.category ?? "", d.comment].map(csvEscape).join(";")
     ));
-    downloadBlob("rapport-qa.csv", "\uFEFF" + lines.join("\r\n"), "text/csv;charset=utf-8");
+    downloadBlob("qa-report.csv", "﻿" + lines.join("\r\n"), "text/csv;charset=utf-8");
   });
 
   document.getElementById("export-json").addEventListener("click", () => {
-    downloadBlob("rapport-qa.json", JSON.stringify(visibleDetails(), null, 2), "application/json");
+    downloadBlob("qa-report.json", JSON.stringify(visibleDetails(), null, 2), "application/json");
   });
 
   loadTests();

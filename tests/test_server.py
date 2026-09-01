@@ -1,8 +1,8 @@
-"""Tests de l'API FastAPI, via TestClient — aucun vrai sous-processus
-pytest, aucun vrai appel Claude : `list_available_tests` et
-`run_pipeline_cancelable` sont mockés à l'endroit où server.py les a
-importés (server.xxx), pas à leur définition d'origine — piège classique du
-mocking Python sinon le patch ne prend pas effet."""
+"""Tests for the FastAPI API, via TestClient — no real pytest subprocess,
+no real Claude call: `list_available_tests` and `run_pipeline_cancelable`
+are mocked where server.py imported them (server.xxx), not at their
+original definition — the classic Python mocking trap, otherwise the patch
+never takes effect."""
 
 import time
 from unittest.mock import patch
@@ -25,7 +25,7 @@ def _wait_until_done(client, run_id: str, timeout: float = 2.0) -> dict:
         if data["status"] != "running":
             return data
         time.sleep(0.02)
-    raise TimeoutError(f"Le run {run_id} n'a pas terminé dans le délai imparti")
+    raise TimeoutError(f"Run {run_id} did not finish within the allotted time")
 
 
 class TestGetTests:
@@ -37,11 +37,11 @@ class TestGetTests:
         assert res.json() == ["a::b", "a::c"]
 
     def test_returns_500_when_collection_fails(self, client):
-        with patch.object(server, "list_available_tests", side_effect=RuntimeError("pytest introuvable")):
+        with patch.object(server, "list_available_tests", side_effect=RuntimeError("pytest not found")):
             res = client.get("/api/tests")
 
         assert res.status_code == 500
-        assert "pytest introuvable" in res.json()["detail"]
+        assert "pytest not found" in res.json()["detail"]
 
 
 class TestGetLastRun:
@@ -60,7 +60,7 @@ class TestGetLastRun:
 
 class TestGetHistory:
     def test_returns_the_stored_history(self, client):
-        fake_history = [{"timestamp": "t2", "total": 5, "reussis": 5, "echoues": 0, "resume": "ok"}]
+        fake_history = [{"timestamp": "t2", "total": 5, "passed": 5, "failed": 0, "summary": "ok"}]
         with patch.object(server, "get_history", return_value=fake_history):
             res = client.get("/api/history")
 
@@ -75,27 +75,27 @@ class TestGetHistory:
 
 class TestRunLifecycle:
     def test_successful_run_transitions_to_done_with_report(self, client, report_factory):
-        fake_report = report_factory(resume="tout va bien")
+        fake_report = report_factory(summary="all is well")
         with patch.object(server, "run_pipeline_cancelable", return_value=fake_report):
             run_id = client.post("/api/run", json={"specification": "", "selected_tests": None}).json()["run_id"]
             final = _wait_until_done(client, run_id)
 
         assert final["status"] == "done"
-        assert final["report"]["resume"] == "tout va bien"
+        assert final["report"]["summary"] == "all is well"
         assert final["error"] is None
 
     def test_pipeline_exception_transitions_to_error(self, client):
-        with patch.object(server, "run_pipeline_cancelable", side_effect=RuntimeError("clé API absente")):
+        with patch.object(server, "run_pipeline_cancelable", side_effect=RuntimeError("missing API key")):
             run_id = client.post("/api/run", json={}).json()["run_id"]
             final = _wait_until_done(client, run_id)
 
         assert final["status"] == "error"
-        assert "clé API absente" in final["error"]
+        assert "missing API key" in final["error"]
         assert final["report"] is None
 
     def test_none_result_transitions_to_cancelled(self, client):
-        # run_pipeline_cancelable renvoie None quand le cancel_event a été
-        # levé avant qu'un rapport n'existe (voir orchestrator/runner.py).
+        # run_pipeline_cancelable returns None when cancel_event was set
+        # before a report could be produced (see orchestrator/runner.py).
         with patch.object(server, "run_pipeline_cancelable", return_value=None):
             run_id = client.post("/api/run", json={}).json()["run_id"]
             final = _wait_until_done(client, run_id)
@@ -103,12 +103,12 @@ class TestRunLifecycle:
         assert final["status"] == "cancelled"
 
     def test_unknown_run_id_returns_404(self, client):
-        res = client.get("/api/run/inexistant")
+        res = client.get("/api/run/nonexistent")
         assert res.status_code == 404
 
     def test_run_starts_immediately_without_waiting_for_completion(self, client, report_factory):
-        # Le POST ne doit jamais bloquer jusqu'à la fin du pipeline — c'est
-        # ce qui permet à /cancel de rester réactif pendant un run long.
+        # The POST must never block until the pipeline finishes — that's
+        # what keeps /cancel responsive during a long run.
         def slow_pipeline(*args, **kwargs):
             time.sleep(1.0)
             return report_factory()
@@ -119,17 +119,17 @@ class TestRunLifecycle:
             elapsed = time.monotonic() - start
 
         assert res.status_code == 200
-        assert elapsed < 0.5  # largement avant la seconde que prendrait le pipeline
+        assert elapsed < 0.5  # well before the second the pipeline would take
 
 
 class TestCancel:
     def test_cancel_unknown_run_id_returns_404(self, client):
-        res = client.post("/api/run/inexistant/cancel")
+        res = client.post("/api/run/nonexistent/cancel")
         assert res.status_code == 404
 
     def test_cancel_sets_the_event_and_attempts_to_kill_subprocess(self, client):
         def pipeline_checks_cancel(specification, selected_tests, cancel_event):
-            # Attend que /cancel ait eu le temps d'être appelé.
+            # Waits for /cancel to have had time to be called.
             for _ in range(100):
                 if cancel_event.is_set():
                     return None

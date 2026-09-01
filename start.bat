@@ -1,7 +1,7 @@
 @echo off
 cd /d "%~dp0"
 if not exist .env (
-    echo Le fichier .env est manquant. Copie .env.example en .env et renseigne ta cle API avant de relancer.
+    echo The .env file is missing. Copy .env.example to .env and fill in your API key before running again.
     pause
     exit /b 1
 )

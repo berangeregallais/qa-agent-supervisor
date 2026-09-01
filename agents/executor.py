@@ -1,15 +1,15 @@
-"""Agent Exécuteur : lance la VRAIE suite Playwright de maisoncarmenta-qa.
+"""Executor agent: runs the REAL Playwright suite of maisoncarmenta-qa.
 
-Pivot par rapport à la V1 (qui générait du code Playwright à la volée) : le
-code généré ne respectait pas systématiquement le Page Object Model et
-produisait plus de faux échecs (locators mal devinés) que de vrais signaux.
-Cet agent n'écrit plus aucun test : il exécute la suite existante et
-transforme le rapport JUnit XML de pytest en résultats structurés.
+Pivot from the V1 (which generated Playwright code on the fly): the
+generated code did not consistently follow the Page Object Model and
+produced more false failures (badly guessed locators) than real signal.
+This agent no longer writes any test: it runs the existing suite and turns
+pytest's JUnit XML report into structured results.
 
-Active aussi pytest-rerunfailures (--reruns) : un test qui échoue puis
-réussit dans le même run est une PREUVE de flakiness, pas une supposition —
-voir conftest.py côté maisoncarmenta-qa pour le hook qui capte ce signal
-(le JUnit XML standard ne le conserve pas).
+Also enables pytest-rerunfailures (--reruns): a test that fails then
+passes within the same run is PROOF of flakiness, not a guess — see
+conftest.py on the maisoncarmenta-qa side for the hook that captures this
+signal (standard JUnit XML does not keep it).
 """
 
 import json
@@ -22,17 +22,17 @@ from pathlib import Path
 from orchestrator.state import QAOrchestratorState
 from schemas.execution_result import ExecutionResult
 
-# Référence au sous-processus pytest en cours, pour permettre une annulation
-# immédiate depuis l'API (server.py) — c'est la seule étape du pipeline dont
-# l'interruption réelle a un sens : les appels Claude, eux, sont trop courts
-# pour valoir la peine d'être coupés en plein vol.
+# Reference to the currently running pytest subprocess, to allow immediate
+# cancellation from the API (server.py) — this is the only pipeline step
+# worth interrupting for real: Claude calls are short enough that cutting
+# them off mid-flight wouldn't be worth the complexity.
 _current_process: subprocess.Popen | None = None
 _process_lock = threading.Lock()
 
 
 def cancel_current_execution() -> bool:
-    """Termine le pytest en cours, s'il y en a un. Renvoie True si un
-    processus a effectivement été interrompu."""
+    """Terminates the currently running pytest process, if any. Returns
+    True if a process was actually interrupted."""
     with _process_lock:
         if _current_process is not None and _current_process.poll() is None:
             _current_process.terminate()
@@ -52,15 +52,17 @@ RERUN_COUNTS_PATH = TARGET_REPORTS_DIR / "rerun-counts.json"
 RERUNS = 2
 RERUNS_DELAY = 1
 
+MAX_ERROR_TEXT_LENGTH = 4000
+
 
 def _python_bin() -> str:
     return str(TARGET_PYTHON) if TARGET_PYTHON.exists() else "python"
 
 
 def list_available_tests() -> list[str]:
-    """Liste tous les node IDs pytest de la vraie suite, pour l'interface
-    (cases à cocher) — jamais codée en dur, toujours lue depuis la vraie
-    suite pour rester exacte si des tests sont ajoutés/retirés."""
+    """Lists every pytest node id of the real suite, for the interface
+    (checkboxes) — never hardcoded, always read from the real suite to
+    stay accurate as tests are added/removed."""
 
     proc = subprocess.run(
         [_python_bin(), "-m", "pytest", "--collect-only", "-q"],
@@ -76,17 +78,13 @@ def list_available_tests() -> list[str]:
     ]
 
 
-MAX_ERROR_TEXT_LENGTH = 4000
-
-
 def _extract_error_text(node: ET.Element | None) -> str:
-    """L'attribut `message` d'un <failure>/<error> pytest est un résumé
-    court — le VRAI détail (ligne de code fautive, chemin fichier:ligne,
-    diff d'assertion complet) est dans le texte de l'élément, ignoré
-    jusqu'ici (vérifié empiriquement avant ce correctif : voir la sonde
-    _scratch_failure_probe.py utilisée pour inspecter un vrai XML). C'est
-    ce texte qui donne à Triage et au Rapporteur de quoi juger correctement
-    une catégorie, pas le seul résumé."""
+    """A pytest <failure>/<error> `message` attribute is a short summary —
+    the REAL detail (the offending source line, file:line path, full
+    assertion diff) lives in the element's text, ignored until this fix
+    (verified empirically beforehand on a real run — see the probe test
+    used to inspect a real XML). It's this text that gives Triage and the
+    Reporter something to actually reason about, not just the summary."""
     if node is None:
         return ""
     text = (node.text or "").strip()
@@ -104,12 +102,12 @@ def _parse_junit(junit_path: Path) -> list[ExecutionResult]:
 
     for testcase in tree.getroot().iter("testcase"):
         if testcase.find("skipped") is not None:
-            continue  # un test explicitement skip n'est ni un succès ni un échec
+            continue  # an explicitly skipped test is neither a pass nor a fail
 
         classname = testcase.get("classname", "")
         name = testcase.get("name", "")
-        fichier = classname.replace(".", "/") + ".py"
-        test_id = f"{fichier}::{name}"
+        file = classname.replace(".", "/") + ".py"
+        test_id = f"{file}::{name}"
 
         failure = testcase.find("failure")
         error = testcase.find("error")
@@ -118,11 +116,11 @@ def _parse_junit(junit_path: Path) -> list[ExecutionResult]:
         results.append(
             ExecutionResult(
                 test_id=test_id,
-                titre=name,
+                title=name,
                 passed=node is None,
-                duree_secondes=float(testcase.get("time", "0")),
-                message_erreur=_extract_error_text(node),
-                fichier=fichier,
+                duration_seconds=float(testcase.get("time", "0")),
+                error_message=_extract_error_text(node),
+                file=file,
             )
         )
 
@@ -135,10 +133,10 @@ def _load_rerun_counts(path: Path) -> dict[str, int]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def executeur_node(state: QAOrchestratorState) -> QAOrchestratorState:
+def executor_node(state: QAOrchestratorState) -> QAOrchestratorState:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     if RERUN_COUNTS_PATH.exists():
-        RERUN_COUNTS_PATH.unlink()  # ne pas hériter du run précédent
+        RERUN_COUNTS_PATH.unlink()  # never inherit the previous run's counter
 
     selected = state.get("selected_tests") or []
 
@@ -147,7 +145,7 @@ def executeur_node(state: QAOrchestratorState) -> QAOrchestratorState:
         f"--junitxml={JUNIT_PATH}",
         f"--reruns={RERUNS}",
         f"--reruns-delay={RERUNS_DELAY}",
-        *selected,  # positional node IDs pytest ; vide = toute la suite
+        *selected,  # positional pytest node ids; empty = the whole suite
     ]
 
     global _current_process
@@ -159,7 +157,7 @@ def executeur_node(state: QAOrchestratorState) -> QAOrchestratorState:
     finally:
         with _process_lock:
             _current_process = None
-    duree_totale = time.monotonic() - start
+    total_duration = time.monotonic() - start
 
     results = _parse_junit(JUNIT_PATH)
     rerun_counts = _load_rerun_counts(RERUN_COUNTS_PATH)
@@ -167,7 +165,7 @@ def executeur_node(state: QAOrchestratorState) -> QAOrchestratorState:
         r.reruns = rerun_counts.get(r.test_id, 0)
 
     flaky_recovered = sum(1 for r in results if r.passed and r.reruns > 0)
-    portee = f"{len(selected)} test(s) sélectionné(s)" if selected else "toute la suite"
+    scope = f"{len(selected)} selected test(s)" if selected else "the whole suite"
 
     return {
         **state,
@@ -175,9 +173,9 @@ def executeur_node(state: QAOrchestratorState) -> QAOrchestratorState:
         "messages": [
             {
                 "role": "assistant",
-                "content": f"[Exécuteur] {portee}, exécuté en {duree_totale:.1f}s : "
-                f"{len(results)} tests, {sum(r.passed for r in results)} réussis, "
-                f"{flaky_recovered} récupéré(s) après rerun (flakiness prouvée).",
+                "content": f"[Executor] {scope}, run in {total_duration:.1f}s: "
+                f"{len(results)} tests, {sum(r.passed for r in results)} passed, "
+                f"{flaky_recovered} recovered after rerun (proven flakiness).",
             }
         ],
     }
