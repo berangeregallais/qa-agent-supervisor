@@ -59,12 +59,6 @@ non-technical stakeholders), all through a local web interface or a CLI.
 
 ![Web interface: a campaign running, spinner and Stop button visible](web/screenshot-running.png)
 
-**Once the run completes**, the full report: pass rate, per-test results
-with the Reporter's comments, and recommendations (this is the same image
-shown at the top of this README):
-
-![Web interface: completed report, pass rate, per-test results, and a two-level summary](web/screenshot-report.png)
-
 **Run history persists across page reloads.** The full report above is
 only rendered in-page during that session, but the run itself stays
 listed after reopening the app:
