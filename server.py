@@ -88,8 +88,21 @@ def get_run_history() -> list[dict]:
 
 @app.post("/api/run")
 def post_run(body: RunRequest) -> dict:
-    run_id = uuid.uuid4().hex[:12]
-    RUNS[run_id] = RunState()
+    # Only one run at a time: the Executor itself only tracks a single
+    # subprocess (agents/executor._current_process), so a second concurrent
+    # run would silently corrupt cancellation for the first one — and each
+    # run spends real Claude API credits, so blocking accidental duplicates
+    # (double-click, a second browser tab) also protects against runaway
+    # cost.
+    with RUNS_LOCK:
+        if any(state.status == "running" for state in RUNS.values()):
+            raise HTTPException(
+                status_code=409,
+                detail="A run is already in progress. Wait for it to finish or cancel it first.",
+            )
+        run_id = uuid.uuid4().hex[:12]
+        RUNS[run_id] = RunState()
+
     thread = threading.Thread(
         target=_execute, args=(run_id, body.specification, body.selected_tests), daemon=True
     )

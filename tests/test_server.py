@@ -4,6 +4,7 @@ are mocked where server.py imported them (server.xxx), not at their
 original definition — the classic Python mocking trap, otherwise the patch
 never takes effect."""
 
+import threading
 import time
 from unittest.mock import patch
 
@@ -15,6 +16,12 @@ import server
 
 @pytest.fixture
 def client():
+    # server.RUNS is a module-level dict, shared across the whole test
+    # session (TestClient(server.app) doesn't reset it) — without clearing
+    # it, a run left "running" by a previous test (e.g. a background thread
+    # that outlives its own test) would trip the concurrency guard for
+    # every test that comes after it.
+    server.RUNS.clear()
     return TestClient(server.app)
 
 
@@ -120,6 +127,40 @@ class TestRunLifecycle:
 
         assert res.status_code == 200
         assert elapsed < 0.5  # well before the second the pipeline would take
+
+
+class TestConcurrencyGuard:
+    def test_second_run_while_one_is_in_progress_returns_409(self, client):
+        # Only one subprocess is tracked globally by the Executor
+        # (agents/executor._current_process) — a second concurrent run
+        # would corrupt cancellation for the first one, on top of spending
+        # a second batch of real Claude credits by accident.
+        release = threading.Event()
+
+        def blocked_pipeline(*args, **kwargs):
+            release.wait(timeout=2.0)
+            return None
+
+        with patch.object(server, "run_pipeline_cancelable", side_effect=blocked_pipeline):
+            first = client.post("/api/run", json={})
+            assert first.status_code == 200
+
+            second = client.post("/api/run", json={})
+
+            release.set()
+            _wait_until_done(client, first.json()["run_id"])
+
+        assert second.status_code == 409
+        assert "already in progress" in second.json()["detail"]
+
+    def test_a_new_run_can_start_once_the_previous_one_is_done(self, client, report_factory):
+        with patch.object(server, "run_pipeline_cancelable", return_value=report_factory()):
+            first_id = client.post("/api/run", json={}).json()["run_id"]
+            _wait_until_done(client, first_id)
+
+            second = client.post("/api/run", json={})
+
+        assert second.status_code == 200
 
 
 class TestCancel:
