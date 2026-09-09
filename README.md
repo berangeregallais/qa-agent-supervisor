@@ -7,11 +7,12 @@ A multi-agent pipeline (LangGraph + Claude API) that runs and analyzes the
 Playwright tests of the **`maisoncarmenta-qa`** project. Orchestration,
 not duplication: this project contains no tests of its own.
 
-![Web interface: test selection screen](web/screenshot.png)
+![Completed report: pass rate, per-test results, and a two-level summary](web/screenshot-report.png)
 
 ## Table of Contents
 
 - [Overview](#overview)
+- [Screenshots](#screenshots)
 - [Architecture](#architecture)
   - [How the two projects fit together](#how-the-two-projects-fit-together)
   - [The pipeline](#the-pipeline)
@@ -47,6 +48,20 @@ non-technical stakeholders), all through a local web interface or a CLI.
 - **Cancelable runs.** Every run executes in a background thread; the
   in-progress `pytest` subprocess can be killed directly from the
   interface.
+
+## Screenshots
+
+**Before a run**, selecting which tests to include:
+
+![Web interface: test selection screen, all tests checked, before any run](web/screenshot.png)
+
+**While a run is in progress**, with the Stop button and estimated cost visible:
+
+![Web interface: a campaign running, spinner and Stop button visible](web/screenshot-running.png)
+
+**Run history**, once a campaign has completed:
+
+![Web interface: run history showing one completed run at 100% pass rate](web/screenshot-history.png)
 
 ## Architecture
 
