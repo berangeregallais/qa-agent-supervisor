@@ -59,9 +59,11 @@ non-technical stakeholders), all through a local web interface or a CLI.
 
 ![Web interface: a campaign running, spinner and Stop button visible](web/screenshot-running.png)
 
-**Run history**, once a campaign has completed:
+**Run history persists across page reloads.** The full report above is
+only rendered in-page during that session, but the run itself stays
+listed after reopening the app:
 
-![Web interface: run history showing one completed run at 100% pass rate](web/screenshot-history.png)
+![Web interface: run history showing one completed run at 100% pass rate, page reloaded](web/screenshot-history.png)
 
 ## Architecture
 
